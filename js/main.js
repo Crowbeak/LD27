@@ -157,6 +157,8 @@ var Warning = {
             "use strict";
             if ((this.dial.value < this.dial.minSafe) || (this.dial.value > this.dial.maxSafe)) {
                 this.visible = true;
+            } else {
+                this.visible = false;
             }
         }
     }),
@@ -185,6 +187,8 @@ var Indicator = {
             this.x = xCoord;
             this.y = 240 - this.height - 30;
             
+            this.minValue = 0;
+            this.maxValue = 100;
             this.minSafe = minSafe;
             this.maxSafe = maxSafe;
             this.value = Math.floor(((this.maxSafe - this.minSafe) / 2) + this.minSafe);
@@ -204,7 +208,7 @@ var Indicator = {
     }),
     
     panel: Class.create(Sprite, {
-        initialize: function (img, xCoord) {
+        initialize: function (img, xCoord, upRate, downRate, upDial, downDial) {
             "use strict";
             Sprite.call(this, img.width, img.height);
             
@@ -213,16 +217,16 @@ var Indicator = {
             this.y = 240;
             
             this.timeLeft = Constants.seconds;
-            this.usable = true;
+            this.clock = new Timer.clock(this);
             
             // Two states
             //  - 0: Off.
             //  - 1: On.
             this.state = 0;
             
-            this.clock = new Timer.clock(this);
-            this.onSwitch = new Switch.onOff(this);
             this.actionPoint = this.x + (this.width / 2);
+            this.onSwitch = new Switch.onOff(this);
+            this.usable = true;
             this.use = function useFunction() {
                 if (this.usable) {
                     if (this.state === 1) {
@@ -236,15 +240,28 @@ var Indicator = {
                     this.usable = true;
                 }
             };
+            
+            this.upDial = upDial;
+            this.upRate = upRate;
+            this.downDial = downDial;
+            this.downRate = downRate;
         },
         
-        onenterframe: function () {
+        onenterframe: function modifyDials() {
             "use strict";
+            if (this.state === 1) {
+                if ((this.upDial.value + this.upRate) <= this.upDial.maxValue) {
+                    this.upDial.value += this.upRate;
+                }
+                if ((this.downDial.value - this.downRate) >= this.upDial.minValue) {
+                    this.downDial.value -= this.downRate;
+                }
+            }
         }
     }),
     
     megapanel: Class.create(Sprite, {
-        initialize: function (img, xCoord) {
+        initialize: function (img, xCoord, upRate, downRate, fDial, pDial, gDial) {
             "use strict";
             Sprite.call(this, img.width, img.height);
             
@@ -266,6 +283,7 @@ var Indicator = {
             //  - 2: Gonks decreasing, frimz and pazzles increasing.
             this.selection = 0;
             
+            this.actionPoint = this.x + (this.width / 2);
             this.onSwitch = new Switch.onOff(this);
             this.selector = new Switch.polystate(this);
             this.selectable = true;
@@ -282,7 +300,6 @@ var Indicator = {
                     this.selectable = true;
                 }
             };
-            this.actionPoint = this.x + (this.width / 2);
             this.usable = true;
             this.use = function useFunction() {
                 if (this.usable) {
@@ -297,10 +314,12 @@ var Indicator = {
                     this.usable = true;
                 }
             };
-        },
-        
-        onenterframe: function () {
-            "use strict";
+            
+            this.upRate = upRate;
+            this.downRate = downRate;
+            this.fDial = fDial;
+            this.pDial = pDial;
+            this.gDial = gDial;
         }
     })
 };
@@ -366,10 +385,10 @@ var Scenes = {
             var frims = new Indicator.dial(images.frims, 25, 10, 90);
             var pazzles = new Indicator.dial(images.pazzles, 230, 30, 85);
             var gonks = new Indicator.dial(images.gonks, 435, 5, 50);
-            var whatsit = new Indicator.panel(images.panel, 0);
-            var thingymabob = new Indicator.panel(images.panel, 160);
-            var doodad = new Indicator.panel(images.panel, 320);
-            var fixitall = new Indicator.megapanel(images.megapanel, 480);
+            var whatsit = new Indicator.panel(images.panel, 0, 1, 1, frims, pazzles);
+            var thingymabob = new Indicator.panel(images.panel, 160, 1, 1, pazzles, gonks);
+            var doodad = new Indicator.panel(images.panel, 320, 1, 1, gonks, frims);
+            var fixitall = new Indicator.megapanel(images.megapanel, 480, 1, 2, frims, pazzles, gonks);
             var children = [];
             var i;
             
