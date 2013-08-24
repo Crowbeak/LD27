@@ -11,7 +11,8 @@
                 Label,
                 Node,
                 Scene,
-                Sprite */
+                Sprite,
+                Surface */
 
 
 enchant();
@@ -249,24 +250,26 @@ var Indicator = {
 var Player = Class.create(Sprite, {
     initialize: function (img, game) {
         "use strict";
-        Sprite.call(this, img.width, img.height);
+        Sprite.call(this, (img.width / 2), img.height);
         this.game = game;
         
         this.image = img;
+        this.frame = 0;
         this.x = (Constants.stageWidth / 2) - (this.width / 2);
         this.y = Constants.stageHeight - this.height;
         this.minX = 0;
         this.maxX = Constants.stageWidth - this.width;
         
         this.addEventListener(Event.ENTER_FRAME, function () {
-            if (this.game.input.left) {
+            if (this.game.input.left && !this.game.input.right) {
                 console.info("Player moving left.");
+                this.frame = 0;
                 if ((this.x - Constants.playerSpeed) >= this.minX) {
                     this.x -= Constants.playerSpeed;
                 }
-            }
-            if (this.game.input.right) {
+            } else if (this.game.input.right && !this.game.input.left) {
                 console.info("Player moving right.");
+                this.frame = 1;
                 if ((this.x + Constants.playerSpeed) <= this.maxX) {
                     this.x += Constants.playerSpeed;
                 }
