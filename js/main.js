@@ -71,7 +71,9 @@ var Switch = {
             
             this.panel = panel;
             this.onColor = Constants.blue;
+            this.onTextColor = "black";
             this.offColor = Constants.red;
+            this.offTextColor = "white";
             this.height = 20;
             this.width = 60;
             this.x = this.panel.x + 30;
@@ -79,20 +81,20 @@ var Switch = {
             
             this.text = "OFF";
             this.backgroundColor = this.offColor;
-            this.color = "white";
+            this.color = this.offTextColor;
             this.font = "20px arial,sans-serif";
         },
         
         onenterframe: function update() {
             "use strict";
-            if (this.panel.isOn) {
-                this.backgroundColor = this.onColor;
-                this.text = "ON";
-                this.color = "black";
-            } else {
+            if (this.panel.state === 0) {
                 this.backgroundColor = this.offColor;
                 this.text = "OFF";
-                this.color = "white";
+                this.color = this.offTextColor;
+            } else {
+                this.backgroundColor = this.onColor;
+                this.text = "ON";
+                this.color = this.onTextColor;
             }
         }
     }),
@@ -110,7 +112,7 @@ var Switch = {
             this.height = 36;
             this.width = 120;
             this.x = this.megapanel.x + 20;
-            this.y = this.megapanel.y + 100;
+            this.y = this.megapanel.y + 130;
             
             this.text = "OFF";
             this.backgroundColor = this.offColor;
@@ -120,19 +122,15 @@ var Switch = {
         
         onenterframe: function update() {
             "use strict";
-            if (this.megapanel.state === 0) {
-                this.backgroundColor = this.offColor;
-                this.text = "OFF";
-                this.color = this.offTextColor;
-            } else if (this.megapanel.state === 1) {
+            if (this.megapanel.selection === 0) {
                 this.backgroundColor = this.onColor;
                 this.text = "FRIMS<br>DECREASING";
                 this.color = this.onTextColor;
-            } else if (this.megapanel.state === 2) {
+            } else if (this.megapanel.selection === 1) {
                 this.backgroundColor = this.onColor;
                 this.text = "PAZZLES<br>DECREASING";
                 this.color = this.onTextColor;
-            } else if (this.megapanel.state === 3) {
+            } else if (this.megapanel.selection === 2) {
                 this.backgroundColor = this.onColor;
                 this.text = "GONKS<br>DECREASING";
                 this.color = this.onTextColor;
@@ -189,7 +187,17 @@ var Indicator = {
             
             this.minSafe = minSafe;
             this.maxSafe = maxSafe;
-            this.value = ((this.maxSafe - this.minSafe) / 2) + this.minSafe;
+            this.value = Math.floor(((this.maxSafe - this.minSafe) / 2) + this.minSafe);
+            // !!!
+            this.tempDisplay = new Label(this.value);
+            this.tempDisplay.x = this.x;
+            this.tempDisplay.y = this.y;
+            this.tempDisplay.color = "black";
+            this.tempDisplay.font = "50px arial,sans-serif";
+            this.addEventListener(Event.ENTER_FRAME, function () {
+                this.tempDisplay.text = this.value;
+            });
+            
             this.danger = new Warning.danger(images.warning, this);
             this.safe = new Warning.safe(images.safe, this);
         }
@@ -206,10 +214,28 @@ var Indicator = {
             
             this.timeLeft = Constants.seconds;
             this.usable = true;
-            this.isOn = false;
+            
+            // Two states
+            //  - 0: Off.
+            //  - 1: On.
+            this.state = 0;
             
             this.clock = new Timer.clock(this);
             this.onSwitch = new Switch.onOff(this);
+            this.actionPoint = this.x + (this.width / 2);
+            this.use = function useFunction() {
+                if (this.usable) {
+                    if (this.state === 1) {
+                        this.state = 0;
+                    } else {
+                        this.state += 1;
+                    }
+                    this.usable = false;
+                    setTimeout(useFunction, 1000);
+                } else {
+                    this.usable = true;
+                }
+            };
         },
         
         onenterframe: function () {
@@ -227,17 +253,50 @@ var Indicator = {
             this.y = 240;
             
             this.timeLeft = Constants.seconds;
-            this.usable = true;
+            this.clock = new Timer.clock(this);
             
-            // Four states
+            // Two states
             //  - 0: Off.
-            //  - 1: Frims decreasing, pazzles and gonks increasing.
-            //  - 2: Pazzles decreasing, frims and gonks increasing.
-            //  - 3: Gonks decreasing, frimz and pazzles increasing.
+            //  - 1: On.
             this.state = 0;
             
-            this.clock = new Timer.clock(this);
-            this.onSwitch = new Switch.polystate(this);
+            // Three selections
+            //  - 0: Frims decreasing, pazzles and gonks increasing.
+            //  - 1: Pazzles decreasing, frims and gonks increasing.
+            //  - 2: Gonks decreasing, frimz and pazzles increasing.
+            this.selection = 0;
+            
+            this.onSwitch = new Switch.onOff(this);
+            this.selector = new Switch.polystate(this);
+            this.selectable = true;
+            this.select = function selectFunction() {
+                if (this.selectable) {
+                    if (this.selection === 2) {
+                        this.selection = 0;
+                    } else {
+                        this.selection += 1;
+                    }
+                    this.selectable = false;
+                    setTimeout(selectFunction, 1000);
+                } else {
+                    this.selectable = true;
+                }
+            };
+            this.actionPoint = this.x + (this.width / 2);
+            this.usable = true;
+            this.use = function useFunction() {
+                if (this.usable) {
+                    if (this.state === 1) {
+                        this.state = 0;
+                    } else {
+                        this.state += 1;
+                    }
+                    this.usable = false;
+                    setTimeout(useFunction, 1000);
+                } else {
+                    this.usable = true;
+                }
+            };
         },
         
         onenterframe: function () {
@@ -260,7 +319,9 @@ var Player = Class.create(Sprite, {
         this.minX = 0;
         this.maxX = Constants.stageWidth - this.width;
         
+        this.interactables = [];
         this.addEventListener(Event.ENTER_FRAME, function () {
+            var i;
             if (this.game.input.left && !this.game.input.right) {
                 console.info("Player moving left.");
                 this.frame = 0;
@@ -272,6 +333,21 @@ var Player = Class.create(Sprite, {
                 this.frame = 1;
                 if ((this.x + Constants.playerSpeed) <= this.maxX) {
                     this.x += Constants.playerSpeed;
+                }
+            }
+            if (this.game.input.up && !this.game.input.down) {
+                console.log("Player input up.");
+                for (i = 0; i < this.interactables.length; i++) {
+                    if (this.intersect(this.interactables[i].onSwitch)) {
+                        this.interactables[i].use();
+                    }
+                }
+            } else if (this.game.input.down && !this.game.input.up) {
+                console.info("Player input down.");
+                for (i = 0; i < this.interactables.length; i++) {
+                    if (this.intersect(this.interactables[i].selector)) {
+                        this.interactables[i].select();
+                    }
                 }
             }
         });
@@ -294,9 +370,14 @@ var Scenes = {
             var thingymabob = new Indicator.panel(images.panel, 160);
             var doodad = new Indicator.panel(images.panel, 320);
             var fixitall = new Indicator.megapanel(images.megapanel, 480);
-            this.player = new Player(images.player, game);
             var children = [];
             var i;
+            
+            this.player = new Player(images.player, game);
+            this.player.interactables.push(whatsit);
+            this.player.interactables.push(thingymabob);
+            this.player.interactables.push(doodad);
+            this.player.interactables.push(fixitall);
             
             children.push(frims);
             children.push(pazzles);
@@ -316,11 +397,17 @@ var Scenes = {
                 if (children[i].onSwitch) {
                     this.addChild(children[i].onSwitch);
                 }
+                if (children[i].selector) {
+                    this.addChild(children[i].selector);
+                }
                 if (children[i].safe) {
                     this.addChild(children[i].safe);
                 }
                 if (children[i].danger) {
                     this.addChild(children[i].danger);
+                }
+                if (children[i].tempDisplay) {
+                    this.addChild(children[i].tempDisplay);
                 }
             }
         }
