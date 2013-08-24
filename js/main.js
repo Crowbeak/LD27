@@ -18,7 +18,6 @@ enchant();
 
 
 var Constants = {
-    debug: true,
     blue: "#00CCFF",
     playerSpeed: 8,
     red: "#FF0000",
@@ -27,6 +26,18 @@ var Constants = {
     stageWidth: 640
 };
 if (Object.freeze) { Object.freeze(Constants); }
+
+function bindKeys(game) {
+    "use strict";
+    console.info("Binding keys.");
+    // Space as 'a' button.
+    game.keybind(32, 'a');
+    // Add WASD movement functionality (doesn't overwrite arrow key movement)
+    game.keybind(65, 'left');
+    game.keybind(68, 'right');
+    game.keybind(87, 'up');
+    game.keybind(83, 'down');
+}
 
 
 var Timer = {
@@ -236,22 +247,43 @@ var Indicator = {
 
 
 var Player = Class.create(Sprite, {
-    initialize: function (img) {
+    initialize: function (img, game) {
         "use strict";
         Sprite.call(this, img.width, img.height);
+        this.game = game;
         
         this.image = img;
         this.x = (Constants.stageWidth / 2) - (this.width / 2);
         this.y = Constants.stageHeight - this.height;
+        this.minX = 0;
+        this.maxX = Constants.stageWidth - this.width;
+        
+        this.addEventListener(Event.ENTER_FRAME, function () {
+            if (this.game.input.left) {
+                console.info("Player moving left.");
+                if ((this.x - Constants.playerSpeed) >= this.minX) {
+                    this.x -= Constants.playerSpeed;
+                }
+            }
+            if (this.game.input.right) {
+                console.info("Player moving right.");
+                if ((this.x + Constants.playerSpeed) <= this.maxX) {
+                    this.x += Constants.playerSpeed;
+                }
+            }
+        });
     }
 });
 
 
 var Scenes = {
     factory: Class.create(Scene, {
-        initialize: function (images) {
+        initialize: function (images, game) {
             "use strict";
+            console.info("Creating factory scene.");
             Scene.call(this);
+            this.game = game;
+            
             var frims = new Indicator.dial(images.frims, 25, 10, 90);
             var pazzles = new Indicator.dial(images.pazzles, 230, 30, 85);
             var gonks = new Indicator.dial(images.gonks, 435, 5, 50);
@@ -259,7 +291,7 @@ var Scenes = {
             var thingymabob = new Indicator.panel(images.panel, 160);
             var doodad = new Indicator.panel(images.panel, 320);
             var fixitall = new Indicator.megapanel(images.megapanel, 480);
-            var player = new Player(images.player);
+            this.player = new Player(images.player, game);
             var children = [];
             var i;
             
@@ -270,7 +302,7 @@ var Scenes = {
             children.push(thingymabob);
             children.push(doodad);
             children.push(fixitall);
-            children.push(player);
+            children.push(this.player);
             
             this.backgroundColor = "black";
             for (i = 0; i < children.length; i++) {
@@ -303,6 +335,7 @@ $(document).ready(function () {
                  'img/warning.png');
     game.fps = 20;
     game.onload = function () {
+        console.info("Game loaded.");
         var images = {
             frims: {
                 dial: game.assets['img/dial.png'],
@@ -323,8 +356,9 @@ $(document).ready(function () {
             },
             player: game.assets['img/player.png']
         };
+        bindKeys(game);
+        var factoryScene = new Scenes.factory(images, game);
         
-        var factoryScene = new Scenes.factory(images);
         game.pushScene(factoryScene);
     };
     game.start();
