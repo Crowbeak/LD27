@@ -21,6 +21,7 @@ enchant();
 var Constants = {
     blue: "#00CCFF",
     fps: 20,
+    gray: "#666666",
     playerSpeed: 8,
     red: "#FF0000",
     seconds: 10,
@@ -48,6 +49,15 @@ var Timer = {
             "use strict";
             Label.call(this);
             
+            this.panel = panel;
+            this.x = this.panel.x + 45;
+            this.y = this.panel.y + 25;
+            
+            this.color = Constants.blue;
+            this.font = "30px arial,sans-serif";
+            
+            this.canDecrement = false;
+            this.canIncrement = false;
             this.makeDecrementable = function () {
                 if ((this.panel.state === 1) && (this.panel.timeLeft > 0)) {
                     this.canDecrement = true;
@@ -58,16 +68,6 @@ var Timer = {
                     this.canIncrement = true;
                 }
             };
-            
-            this.panel = panel;
-            this.x = this.panel.x + 45;
-            this.y = this.panel.y + 25;
-            
-            this.color = Constants.blue;
-            this.font = "30px arial,sans-serif";
-            
-            this.canDecrement = false;
-            this.canIncrement = false;
             this.decrement = function () {
                 if (this.panel.timeLeft > 0) {
                     if (this.canDecrement === true) {
@@ -218,13 +218,16 @@ var Warning = {
 
 var Indicator = {
     dial: Class.create(Sprite, {
-        initialize: function (images, xCoord, minSafe, maxSafe, upRate, downRate) {
+        initialize: function (name, images, xCoord, minSafe, maxSafe, upRate, downRate) {
             "use strict";
             Sprite.call(this, images.dial.width, images.dial.height);
             
+            var barHeight = 10;
+            
             this.image = images.dial;
             this.x = xCoord;
-            this.y = 240 - this.height - 30;
+            this.y = 220 - this.height - 30;
+            this.lost = false;
             
             this.minValue = 0;
             this.maxValue = 100;
@@ -234,18 +237,56 @@ var Indicator = {
             this.upRate = upRate;
             this.downRate = downRate;
             
-            // !!!
-            this.tempDisplay = new Label(this.value);
-            this.tempDisplay.x = this.x;
-            this.tempDisplay.y = this.y;
-            this.tempDisplay.color = "black";
-            this.tempDisplay.font = "50px arial,sans-serif";
-            this.addEventListener(Event.ENTER_FRAME, function () {
-                this.tempDisplay.text = Math.floor(this.value);
-            });
+            this.barRatio = (this.width - 10) / this.maxValue;
+            this.lowZone = new Label();
+            this.lowZone.height = barHeight;
+            this.lowZone.width = this.minSafe * this.barRatio;
+            this.lowZone.backgroundColor = Constants.red;
+            this.lowZone.x = this.x + 5;
+            this.lowZone.y = this.y + 5;
+            
+            this.safeZone = new Label();
+            this.safeZone.height = barHeight;
+            this.safeZone.width = (this.maxSafe - this.minSafe) * this.barRatio;
+            this.safeZone.backgroundColor = Constants.blue;
+            this.safeZone.x = this.lowZone.x + this.lowZone.width;
+            this.safeZone.y = this.y + 5;
+            
+            this.highZone = new Label();
+            this.highZone.height = barHeight;
+            this.highZone.width = (this.maxValue - this.maxSafe) * this.barRatio;
+            this.highZone.backgroundColor = Constants.red;
+            this.highZone.x = this.safeZone.x + this.safeZone.width;
+            this.highZone.y = this.safeZone.y;
+            
+            this.needle = new Label();
+            this.needle.height = this.height;
+            this.needle.width = 3;
+            this.needle.backgroundColor = "black";
+            this.needle.x = this.lowZone.x + (this.value * this.barRatio) - 1;
+            this.needle.y = this.y;
+            this.needle.maxX = this.highZone.x + this.highZone.width - 2;
+            this.needle.minX = this.lowZone.x;
             
             this.danger = new Warning.danger(images.warning, this);
             this.safe = new Warning.safe(images.safe, this);
+            
+            this.nameLabel = new Label(name);
+            this.nameLabel.width = 80;
+            this.nameLabel.height = 20;
+            this.nameLabel.backgroundColor = Constants.gray;
+            this.nameLabel.font = "20px arial, sans-serif";
+            this.nameLabel.color = "white";
+            this.nameLabel.x = this.x + ((this.width - this.nameLabel.width) / 2);
+            this.nameLabel.y = this.y + this.height + 10;
+        },
+        
+        onenterframe: function () {
+            "use strict";
+            var testNeedleX = this.lowZone.x + (this.value * this.barRatio) - 1;
+            if ((this.needle.minX < testNeedleX) && (testNeedleX < this.needle.maxX)) {
+                this.needle.x = testNeedleX;
+            }
         }
     }),
     
@@ -304,9 +345,17 @@ var Indicator = {
             if (this.state === 1) {
                 if ((this.upDial.value + this.upDial.upRate) <= this.upDial.maxValue) {
                     this.upDial.value += this.upDial.upRate;
+                    if ((this.upDial.value > this.upDial.maxValue) || (this.upDial.value < this.upDial.minValue)) {
+                        this.upDial.lost = true;
+                        console.info("Loss due to a dial at maximum value.");
+                    }
                 }
                 if ((this.downDial.value - this.downDial.downRate) >= this.downDial.minValue) {
                     this.downDial.value -= this.downDial.downRate;
+                    if ((this.downDial.value < this.downDial.minValue) || (this.downDial.value > this.downDial.maxValue)) {
+                        this.downDial.lost = true;
+                        console.info("Loss due to a dial at minimum value.");
+                    }
                 }
             }
             this.clock.decrement();
@@ -425,6 +474,14 @@ var Indicator = {
                         this.pDial.value += this.pDial.upRate;
                     }
                 }
+                
+                if ((this.fDial.value > this.fDial.maxValue) || (this.fDial.value < this.fDial.minValue)) {
+                    this.fDial.lost = true;
+                } else if ((this.pDial.value > this.pDial.maxValue) || (this.pDial.value < this.pDial.minValue)) {
+                    this.pDial.lost = true;
+                } else if ((this.gDial.value > this.gDial.maxValue) || (this.gDial.value < this.gDial.minValue)) {
+                    this.gDial.lost = true;
+                }
             }
             this.clock.decrement();
             this.clock.increment();
@@ -482,7 +539,84 @@ var Player = Class.create(Sprite, {
 });
 
 
+var Machine = Class.create(Label, {
+    initialize: function (game, frimRate, pazzleRate, gonkRate) {
+        "use strict";
+        Label.call(this);
+        this.game = game;
+        
+        this.visible = false;
+        
+        this.dials = {
+            frimDial: {},
+            pazzleDial: {},
+            gonkDial: {}
+        };
+        
+        this.frimRate = frimRate;
+        this.pazzleRate = pazzleRate;
+        this.gonkRate = gonkRate;
+        
+        this.exploding = false;
+        this.explosion = new Label("KA-BOOM!");
+        this.explosion.height = Constants.stageHeight;
+        this.explosion.width = Constants.stageWidth;
+        this.explosion.backgroundColor = Constants.red;
+        this.explosion.font = "100px arial,sans-serif";
+        this.explosion.color = "yellow";
+        this.explosion.x = 0;
+        this.explosion.y = 0;
+        this.explosion.visible = false;
+        this.explode = function () {
+            this.explosion.visible = true;
+        };
+        
+        this.addEventListener(Event.ENTER_FRAME, function () {
+            if (this.exploding) {
+                this.explode();
+            } else {
+                this.dials.frimDial.value += this.frimRate;
+                this.dials.pazzleDial.value += this.pazzleRate;
+                this.dials.gonkDial.value += this.gonkRate;
+                
+                if ((this.dials.frimDial.value > this.dials.frimDial.maxValue) || (this.dials.frimDial.value < this.dials.frimDial.minValue)) {
+                    this.dials.frimDial.lost = true;
+                } else if ((this.dials.pazzleDial.value > this.dials.pazzleDial.maxValue) || (this.dials.pazzleDial.value < this.dials.pazzleDial.minValue)) {
+                    this.dials.pazzleDial.lost = true;
+                } else if ((this.dials.gonkDial.value > this.dials.gonkDial.maxValue) || (this.dials.gonkDial.value < this.dials.gonkDial.minValue)) {
+                    this.dials.gonkDial.lost = true;
+                }
+            }
+            
+            if ((this.dials.frimDial.lost === true) || (this.dials.pazzleDial.lost === true) || (this.dials.gonkDial.lost === true)) {
+                this.exploding = true;
+            }
+        });
+    }
+});
+
+
 var Scenes = {
+    title: Class.create(Scene, {
+        initialize: function () {
+            "use strict";
+            Scene.call(this);
+            
+            this.height = Constants.stageHeight;
+            this.width = Constants.stageWidth;
+            this.backgroundColor = "#333333";
+            
+            var pressSpace = new Label("Press spacebar to start.");
+            pressSpace.font = "50px arial,sans-serif";
+            pressSpace.color = "white";
+            pressSpace.x = 50;
+            pressSpace.y = 125;
+            pressSpace.width = Constants.stageWidth;
+            
+            this.addChild(pressSpace);
+        }
+    }),
+    
     factory: Class.create(Scene, {
         initialize: function (images, sounds, game) {
             "use strict";
@@ -490,38 +624,42 @@ var Scenes = {
             Scene.call(this);
             this.game = game;
             
-            var frims   = new Indicator.dial(images.frims, 5, 10, 90, 0.1, 0.09);
-            var pazzles = new Indicator.dial(images.pazzles, 230, 30, 85, 0.12, 0.1);
-            var gonks   = new Indicator.dial(images.gonks, 435, 5, 50, 0.08, 0.07);
-            var whatsit = new Indicator.panel(images.panel, sounds.panel, 0, frims, pazzles);
-            var thingymabob = new Indicator.panel(images.panel, sounds.panel, 160, pazzles, gonks);
-            var doodad = new Indicator.panel(images.panel, sounds.panel, 320, gonks, frims);
+            var frims   = new Indicator.dial("Frims", images.frims, 25, 10, 90, 0.1, 0.09);
+            var pazzles = new Indicator.dial("Pazzles", images.pazzles, 230, 30, 85, 0.12, 0.1);
+            var gonks   = new Indicator.dial("Gonks", images.gonks, 435, 5, 50, 0.08, 0.07);
+            var frimurderer = new Indicator.panel(images.panel, sounds.panel, 0, pazzles, frims);
+            var pazzlepaddler = new Indicator.panel(images.panel, sounds.panel, 160, gonks, pazzles);
+            var gonkiller = new Indicator.panel(images.panel, sounds.panel, 320, frims, gonks);
             var fixitall = new Indicator.megapanel(images.megapanel, sounds.megapanel, 480, frims, pazzles, gonks);
             var children = [];
             var i;
             
             this.player = new Player(images.player, game);
-            this.player.interactables.push(whatsit);
-            this.player.interactables.push(thingymabob);
-            this.player.interactables.push(doodad);
+            this.player.interactables.push(frimurderer);
+            this.player.interactables.push(pazzlepaddler);
+            this.player.interactables.push(gonkiller);
             this.player.interactables.push(fixitall);
+            
+            this.machine = new Machine(game, 0.05, 0.06, 0.04);
+            this.machine.dials.frimDial = frims;
+            this.machine.dials.pazzleDial = pazzles;
+            this.machine.dials.gonkDial = gonks;
             
             children.push(frims);
             children.push(pazzles);
             children.push(gonks);
-            children.push(whatsit);
-            children.push(thingymabob);
-            children.push(doodad);
+            children.push(frimurderer);
+            children.push(pazzlepaddler);
+            children.push(gonkiller);
             children.push(fixitall);
             children.push(this.player);
+            children.push(this.machine);
             
             this.backgroundColor = "black";
             for (i = 0; i < children.length; i++) {
                 this.addChild(children[i]);
                 if (children[i].clock) {
                     this.addChild(children[i].clock);
-                }
-                if (children[i].onSwitch) {
                     this.addChild(children[i].onSwitch);
                 }
                 if (children[i].selector) {
@@ -529,12 +667,15 @@ var Scenes = {
                 }
                 if (children[i].safe) {
                     this.addChild(children[i].safe);
-                }
-                if (children[i].danger) {
                     this.addChild(children[i].danger);
+                    this.addChild(children[i].lowZone);
+                    this.addChild(children[i].safeZone);
+                    this.addChild(children[i].highZone);
+                    this.addChild(children[i].needle);
+                    this.addChild(children[i].nameLabel);
                 }
-                if (children[i].tempDisplay) {
-                    this.addChild(children[i].tempDisplay);
+                if (children[i].explosion) {
+                    this.addChild(children[i].explosion);
                 }
             }
         }
@@ -586,8 +727,15 @@ $(document).ready(function () {
         };
         bindKeys(game);
         var factoryScene = new Scenes.factory(images, sounds, game);
+        var titleScene = new Scenes.title();
+        titleScene.addEventListener(Event.ENTER_FRAME, function () {
+            if (game.input.a) {
+                game.popScene(this);
+            }
+        });
         
         game.pushScene(factoryScene);
+        game.pushScene(titleScene);
     };
     game.start();
 });
