@@ -212,7 +212,7 @@ var Indicator = {
     }),
     
     panel: Class.create(Sprite, {
-        initialize: function (img, xCoord, upDial, downDial) {
+        initialize: function (img, sound, xCoord, upDial, downDial) {
             "use strict";
             Sprite.call(this, img.width, img.height);
             
@@ -225,6 +225,7 @@ var Indicator = {
                 this.usable = true;
             };
             
+            this.sound = sound;
             this.image = img;
             this.x = xCoord;
             this.y = 240;
@@ -252,9 +253,11 @@ var Indicator = {
                 if (this.usable) {
                     if (this.state === 1) {
                         this.state = 0;
+                        this.sound.play();
                         this.canDecrement = false;
                     } else {
-                        this.state += 1;
+                        this.state = 1;
+                        this.sound.play();
                         this.canDecrement = true;
                     }
                     this.usable = false;
@@ -282,12 +285,12 @@ var Indicator = {
     }),
     
     megapanel: Class.create(Sprite, {
-        initialize: function (img, xCoord, fDial, pDial, gDial) {
+        initialize: function (img, sounds, xCoord, fDial, pDial, gDial) {
             "use strict";
             Sprite.call(this, img.width, img.height);
             
             var makeDecrementable = function () {
-                if (this.state === 1) {
+                if ((this.state === 1) && (this.timeLeft > 0)) {
                     this.canDecrement = true;
                 }
             };
@@ -298,6 +301,8 @@ var Indicator = {
                 this.usable = true;
             };
             
+            this.onOffSound = sounds.onOff;
+            this.selectSound = sounds.polystate;
             this.image = img;
             this.x = xCoord;
             this.y = 240;
@@ -306,10 +311,15 @@ var Indicator = {
             this.clock = new Timer.clock(this);
             this.canDecrement = false;
             this.decrement = function () {
-                if (this.canDecrement) {
-                    this.timeLeft -= 1;
+                if (this.timeLeft > 0) {
+                    if (this.canDecrement === true) {
+                        this.timeLeft -= 1;
+                        this.canDecrement = false;
+                        this.tl.cue({ 20: makeDecrementable });
+                    }
+                } else {
+                    this.state = 0;
                     this.canDecrement = false;
-                    this.tl.cue({ 20: makeDecrementable });
                 }
             };
             
@@ -332,8 +342,10 @@ var Indicator = {
                 if (this.selectable) {
                     if (this.selection === 2) {
                         this.selection = 0;
+                        this.selectSound.play();
                     } else {
                         this.selection += 1;
+                        this.selectSound.play();
                     }
                     this.selectable = false;
                     // If FPS changes, change numerical value.
@@ -345,9 +357,11 @@ var Indicator = {
                 if (this.usable) {
                     if (this.state === 1) {
                         this.state = 0;
+                        this.onOffSound.play();
                         this.canDecrement = false;
                     } else {
-                        this.state += 1;
+                        this.state = 1;
+                        this.onOffSound.play();
                         this.canDecrement = true;
                     }
                     this.usable = false;
@@ -455,19 +469,19 @@ var Player = Class.create(Sprite, {
 
 var Scenes = {
     factory: Class.create(Scene, {
-        initialize: function (images, game) {
+        initialize: function (images, sounds, game) {
             "use strict";
             console.info("Creating factory scene.");
             Scene.call(this);
             this.game = game;
             
-            var frims = new Indicator.dial(images.frims, 25, 10, 90, 0.1, 0.09);
+            var frims   = new Indicator.dial(images.frims, 5, 10, 90, 0.1, 0.09);
             var pazzles = new Indicator.dial(images.pazzles, 230, 30, 85, 0.12, 0.1);
-            var gonks = new Indicator.dial(images.gonks, 435, 5, 50, 0.08, 0.07);
-            var whatsit = new Indicator.panel(images.panel, 0, frims, pazzles);
-            var thingymabob = new Indicator.panel(images.panel, 160, pazzles, gonks);
-            var doodad = new Indicator.panel(images.panel, 320, gonks, frims);
-            var fixitall = new Indicator.megapanel(images.megapanel, 480, frims, pazzles, gonks);
+            var gonks   = new Indicator.dial(images.gonks, 435, 5, 50, 0.08, 0.07);
+            var whatsit = new Indicator.panel(images.panel, sounds.panel, 0, frims, pazzles);
+            var thingymabob = new Indicator.panel(images.panel, sounds.panel, 160, pazzles, gonks);
+            var doodad = new Indicator.panel(images.panel, sounds.panel, 320, gonks, frims);
+            var fixitall = new Indicator.megapanel(images.megapanel, sounds.megapanel, 480, frims, pazzles, gonks);
             var children = [];
             var i;
             
@@ -520,7 +534,10 @@ $(document).ready(function () {
                  'img/panel.png',
                  'img/player.png',
                  'img/safe.png',
-                 'img/warning.png');
+                 'img/warning.png',
+                 'sound/bork.mp3',
+                 'sound/gerk.mp3',
+                 'sound/klaxon.mp3');
     game.fps = Constants.fps;
     game.onload = function () {
         console.info("Game loaded.");
@@ -544,8 +561,16 @@ $(document).ready(function () {
             },
             player: game.assets['img/player.png']
         };
+        var sounds = {
+            danger: game.assets['sound/klaxon.mp3'],
+            panel: game.assets['sound/gerk.mp3'],
+            megapanel: {
+                onOff: game.assets['sound/gerk.mp3'],
+                polystate: game.assets['sound/bork.mp3']
+            }
+        };
         bindKeys(game);
-        var factoryScene = new Scenes.factory(images, game);
+        var factoryScene = new Scenes.factory(images, sounds, game);
         
         game.pushScene(factoryScene);
     };
