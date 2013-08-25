@@ -48,12 +48,50 @@ var Timer = {
             "use strict";
             Label.call(this);
             
+            this.makeDecrementable = function () {
+                if ((this.panel.state === 1) && (this.panel.timeLeft > 0)) {
+                    this.canDecrement = true;
+                }
+            };
+            this.makeIncrementable = function () {
+                if ((this.panel.state === 0) && (this.panel.timeLeft < 10)) {
+                    this.canIncrement = true;
+                }
+            };
+            
             this.panel = panel;
             this.x = this.panel.x + 45;
             this.y = this.panel.y + 25;
             
             this.color = Constants.blue;
             this.font = "30px arial,sans-serif";
+            
+            this.canDecrement = false;
+            this.canIncrement = false;
+            this.decrement = function () {
+                if (this.panel.timeLeft > 0) {
+                    if (this.canDecrement === true) {
+                        this.panel.timeLeft -= 1;
+                        this.canDecrement = false;
+                        this.tl.cue({ 20: this.makeDecrementable });
+                    }
+                } else {
+                    this.panel.state = 0;
+                    this.canDecrement = false;
+                    this.tl.cue({ 20: this.makeIncrementable });
+                }
+            };
+            this.increment = function addSeconds() {
+                if (this.panel.timeLeft < 10) {
+                    if (this.canIncrement === true) {
+                        this.panel.timeLeft += 1;
+                        this.canIncrement = false;
+                        this.tl.cue({ 20: this.makeIncrementable });
+                    }
+                } else {
+                    this.canIncrement = false;
+                }
+            };
         },
         
         onenterframe: function () {
@@ -216,11 +254,6 @@ var Indicator = {
             "use strict";
             Sprite.call(this, img.width, img.height);
             
-            var makeDecrementable = function () {
-                if (this.state === 1) {
-                    this.canDecrement = true;
-                }
-            };
             var makeUsable = function () {
                 this.usable = true;
             };
@@ -232,14 +265,6 @@ var Indicator = {
             
             this.timeLeft = Constants.seconds;
             this.clock = new Timer.clock(this);
-            this.canDecrement = false;
-            this.decrement = function () {
-                if (this.canDecrement) {
-                    this.timeLeft -= 1;
-                    this.canDecrement = false;
-                    this.tl.cue({ 20: makeDecrementable });
-                }
-            };
             
             // Two states
             //  - 0: Off.
@@ -252,13 +277,17 @@ var Indicator = {
             this.use = function useFunction() {
                 if (this.usable) {
                     if (this.state === 1) {
+                        this.tl.clear();
                         this.state = 0;
                         this.sound.play();
-                        this.canDecrement = false;
+                        this.clock.canDecrement = false;
+                        this.clock.tl.cue({ 20: this.clock.makeIncrementable });
                     } else {
+                        this.tl.clear();
                         this.state = 1;
                         this.sound.play();
-                        this.canDecrement = true;
+                        this.clock.canDecrement = true;
+                        this.clock.canIncrement = false;
                     }
                     this.usable = false;
                     // If FPS changes, change numerical value.
@@ -280,7 +309,8 @@ var Indicator = {
                     this.downDial.value -= this.downDial.downRate;
                 }
             }
-            this.decrement();
+            this.clock.decrement();
+            this.clock.increment();
         }
     }),
     
@@ -289,11 +319,6 @@ var Indicator = {
             "use strict";
             Sprite.call(this, img.width, img.height);
             
-            var makeDecrementable = function () {
-                if ((this.state === 1) && (this.timeLeft > 0)) {
-                    this.canDecrement = true;
-                }
-            };
             var makeSelectable = function () {
                 this.selectable = true;
             };
@@ -306,22 +331,11 @@ var Indicator = {
             this.image = img;
             this.x = xCoord;
             this.y = 240;
+            this.selectable = true;
+            this.usable = true;
             
             this.timeLeft = Constants.seconds;
             this.clock = new Timer.clock(this);
-            this.canDecrement = false;
-            this.decrement = function () {
-                if (this.timeLeft > 0) {
-                    if (this.canDecrement === true) {
-                        this.timeLeft -= 1;
-                        this.canDecrement = false;
-                        this.tl.cue({ 20: makeDecrementable });
-                    }
-                } else {
-                    this.state = 0;
-                    this.canDecrement = false;
-                }
-            };
             
             // Two states
             //  - 0: Off.
@@ -337,7 +351,6 @@ var Indicator = {
             this.actionPoint = this.x + (this.width / 2);
             this.onSwitch = new Switch.onOff(this);
             this.selector = new Switch.polystate(this);
-            this.selectable = true;
             this.select = function selectFunction() {
                 if (this.selectable) {
                     if (this.selection === 2) {
@@ -348,25 +361,26 @@ var Indicator = {
                         this.selectSound.play();
                     }
                     this.selectable = false;
-                    // If FPS changes, change numerical value.
+                    this.tl.clear();
                     this.tl.cue({ 7 : makeSelectable });
+                    this.tl.cue({ 7: makeUsable });
                 }
             };
-            this.usable = true;
             this.use = function useFunction() {
                 if (this.usable) {
                     if (this.state === 1) {
                         this.state = 0;
                         this.onOffSound.play();
-                        this.canDecrement = false;
+                        this.clock.canDecrement = false;
                     } else {
                         this.state = 1;
                         this.onOffSound.play();
-                        this.canDecrement = true;
+                        this.clock.canDecrement = true;
                     }
                     this.usable = false;
-                    // If FPS changes, change numerical value.
+                    this.tl.clear();
                     this.tl.cue({ 7: makeUsable });
+                    this.tl.cue({ 7 : makeSelectable });
                 }
             };
             
@@ -412,7 +426,8 @@ var Indicator = {
                     }
                 }
             }
-            this.decrement();
+            this.clock.decrement();
+            this.clock.increment();
         }
     })
 };
