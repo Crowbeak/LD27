@@ -17,10 +17,7 @@
 
 enchant();
 
-// If fps value changes, manual changes must be made in:
-//  - Indicator.panel.use
-//  - Indicator.megapanel.use
-//  - Indicator.megapanel.select
+// If fps value changes, manual changes must be made wherever you have tl.cue.
 var Constants = {
     blue: "#00CCFF",
     fps: 20,
@@ -219,6 +216,11 @@ var Indicator = {
             "use strict";
             Sprite.call(this, img.width, img.height);
             
+            var makeDecrementable = function () {
+                if (this.state === 1) {
+                    this.canDecrement = true;
+                }
+            };
             var makeUsable = function () {
                 this.usable = true;
             };
@@ -229,6 +231,14 @@ var Indicator = {
             
             this.timeLeft = Constants.seconds;
             this.clock = new Timer.clock(this);
+            this.canDecrement = false;
+            this.decrement = function () {
+                if (this.canDecrement) {
+                    this.timeLeft -= 1;
+                    this.canDecrement = false;
+                    this.tl.cue({ 20: makeDecrementable });
+                }
+            };
             
             // Two states
             //  - 0: Off.
@@ -242,8 +252,10 @@ var Indicator = {
                 if (this.usable) {
                     if (this.state === 1) {
                         this.state = 0;
+                        this.canDecrement = false;
                     } else {
                         this.state += 1;
+                        this.canDecrement = true;
                     }
                     this.usable = false;
                     // If FPS changes, change numerical value.
@@ -265,6 +277,7 @@ var Indicator = {
                     this.downDial.value -= this.downDial.downRate;
                 }
             }
+            this.decrement();
         }
     }),
     
@@ -273,6 +286,11 @@ var Indicator = {
             "use strict";
             Sprite.call(this, img.width, img.height);
             
+            var makeDecrementable = function () {
+                if (this.state === 1) {
+                    this.canDecrement = true;
+                }
+            };
             var makeSelectable = function () {
                 this.selectable = true;
             };
@@ -286,6 +304,14 @@ var Indicator = {
             
             this.timeLeft = Constants.seconds;
             this.clock = new Timer.clock(this);
+            this.canDecrement = false;
+            this.decrement = function () {
+                if (this.canDecrement) {
+                    this.timeLeft -= 1;
+                    this.canDecrement = false;
+                    this.tl.cue({ 20: makeDecrementable });
+                }
+            };
             
             // Two states
             //  - 0: Off.
@@ -319,8 +345,10 @@ var Indicator = {
                 if (this.usable) {
                     if (this.state === 1) {
                         this.state = 0;
+                        this.canDecrement = false;
                     } else {
                         this.state += 1;
+                        this.canDecrement = true;
                     }
                     this.usable = false;
                     // If FPS changes, change numerical value.
@@ -370,6 +398,7 @@ var Indicator = {
                     }
                 }
             }
+            this.decrement();
         }
     })
 };
