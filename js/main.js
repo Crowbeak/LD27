@@ -22,7 +22,7 @@ var Constants = {
     blue: "#00CCFF",
     fps: 20,
     gray: "#666666",
-    playerSpeed: 8,
+    playerSpeed: 10,
     red: "#FF0000",
     seconds: 10,
     stageHeight: 480,
@@ -50,9 +50,9 @@ var Timer = {
             Label.call(this);
             
             this.panel = panel;
+            
             this.x = this.panel.x + 45;
             this.y = this.panel.y + 25;
-            
             this.color = Constants.blue;
             this.font = "30px arial,sans-serif";
             
@@ -116,7 +116,7 @@ var Switch = {
             this.height = 20;
             this.width = 60;
             this.x = this.panel.x + 30;
-            this.y = this.panel.y + 100;
+            this.y = this.panel.y + 110;
             
             this.text = "OFF";
             this.backgroundColor = this.offColor;
@@ -151,7 +151,7 @@ var Switch = {
             this.height = 36;
             this.width = 120;
             this.x = this.megapanel.x + 20;
-            this.y = this.megapanel.y + 130;
+            this.y = this.megapanel.y + 140;
             
             this.text = "OFF";
             this.backgroundColor = this.offColor;
@@ -291,7 +291,7 @@ var Indicator = {
     }),
     
     panel: Class.create(Sprite, {
-        initialize: function (img, sound, xCoord, upDial, downDial) {
+        initialize: function (name, img, sound, xCoord, upDial, downDial) {
             "use strict";
             Sprite.call(this, img.width, img.height);
             
@@ -338,6 +338,14 @@ var Indicator = {
             
             this.upDial = upDial;
             this.downDial = downDial;
+            
+            this.nameLabel = new Label(name);
+            this.nameLabel.width = 120;
+            this.nameLabel.height = 18;
+            this.nameLabel.font = "18px arial, sans-serif";
+            this.nameLabel.color = "black";
+            this.nameLabel.x = this.x + ((this.width - this.nameLabel.width) / 2);
+            this.nameLabel.y = this.y + 70;
         },
         
         onenterframe: function modifyDials() {
@@ -364,7 +372,7 @@ var Indicator = {
     }),
     
     megapanel: Class.create(Sprite, {
-        initialize: function (img, sounds, xCoord, fDial, pDial, gDial) {
+        initialize: function (name, img, sounds, xCoord, fDial, pDial, gDial) {
             "use strict";
             Sprite.call(this, img.width, img.height);
             
@@ -436,6 +444,14 @@ var Indicator = {
             this.fDial = fDial;
             this.pDial = pDial;
             this.gDial = gDial;
+            
+            this.nameLabel = new Label(name);
+            this.nameLabel.width = 120;
+            this.nameLabel.height = 18;
+            this.nameLabel.font = "18px arial, sans-serif";
+            this.nameLabel.color = "black";
+            this.nameLabel.x = this.x + ((this.width - this.nameLabel.width) / 2);
+            this.nameLabel.y = this.y + 70;
         },
         
         onenterframe: function modifyDials() {
@@ -493,7 +509,7 @@ var Indicator = {
 var Player = Class.create(Sprite, {
     initialize: function (img, game) {
         "use strict";
-        Sprite.call(this, (img.width / 2), img.height);
+        Sprite.call(this, (img.width / 3), img.height);
         this.game = game;
         
         this.image = img;
@@ -558,38 +574,23 @@ var Machine = Class.create(Label, {
         this.gonkRate = gonkRate;
         
         this.exploding = false;
-        this.explosion = new Label("KA-BOOM!");
-        this.explosion.height = Constants.stageHeight;
-        this.explosion.width = Constants.stageWidth;
-        this.explosion.backgroundColor = Constants.red;
-        this.explosion.font = "100px arial,sans-serif";
-        this.explosion.color = "yellow";
-        this.explosion.x = 0;
-        this.explosion.y = 0;
-        this.explosion.visible = false;
-        this.explode = function () {
-            this.explosion.visible = true;
-        };
         
         this.addEventListener(Event.ENTER_FRAME, function () {
-            if (this.exploding) {
-                this.explode();
-            } else {
-                this.dials.frimDial.value += this.frimRate;
-                this.dials.pazzleDial.value += this.pazzleRate;
-                this.dials.gonkDial.value += this.gonkRate;
-                
-                if ((this.dials.frimDial.value > this.dials.frimDial.maxValue) || (this.dials.frimDial.value < this.dials.frimDial.minValue)) {
-                    this.dials.frimDial.lost = true;
-                } else if ((this.dials.pazzleDial.value > this.dials.pazzleDial.maxValue) || (this.dials.pazzleDial.value < this.dials.pazzleDial.minValue)) {
-                    this.dials.pazzleDial.lost = true;
-                } else if ((this.dials.gonkDial.value > this.dials.gonkDial.maxValue) || (this.dials.gonkDial.value < this.dials.gonkDial.minValue)) {
-                    this.dials.gonkDial.lost = true;
-                }
+            this.dials.frimDial.value += this.frimRate;
+            this.dials.pazzleDial.value += this.pazzleRate;
+            this.dials.gonkDial.value += this.gonkRate;
+            
+            if ((this.dials.frimDial.value > this.dials.frimDial.maxValue) || (this.dials.frimDial.value < this.dials.frimDial.minValue)) {
+                this.dials.frimDial.lost = true;
+            } else if ((this.dials.pazzleDial.value > this.dials.pazzleDial.maxValue) || (this.dials.pazzleDial.value < this.dials.pazzleDial.minValue)) {
+                this.dials.pazzleDial.lost = true;
+            } else if ((this.dials.gonkDial.value > this.dials.gonkDial.maxValue) || (this.dials.gonkDial.value < this.dials.gonkDial.minValue)) {
+                this.dials.gonkDial.lost = true;
             }
             
             if ((this.dials.frimDial.lost === true) || (this.dials.pazzleDial.lost === true) || (this.dials.gonkDial.lost === true)) {
                 this.exploding = true;
+                console.info("Kersplode!");
             }
         });
     }
@@ -597,23 +598,82 @@ var Machine = Class.create(Label, {
 
 
 var Scenes = {
+    gameOver: Class.create(Scene, {
+        initialize: function (game) {
+            "use strict";
+            Scene.call(this);
+            
+            var kaboom = new Label("KA-BOOM!");
+            
+            this.game = game;
+            this.height = Constants.stageHeight;
+            this.width = Constants.stageWidth;
+            this.backgroundColor = Constants.red;
+            
+            kaboom.height = 100;
+            kaboom.width = Constants.stageWidth;
+            kaboom.font = "100px arial,sans-serif";
+            kaboom.color = "yellow";
+            kaboom.x = 70;
+            kaboom.y = 50;
+            
+            this.addChild(kaboom);
+        }
+    }),
+    
     title: Class.create(Scene, {
         initialize: function () {
             "use strict";
             Scene.call(this);
             
+            var instructions1 = new Label("Objective: Keep the machine from blowing up by regulating gauge levels.");
+            var instructions2 = new Label("The three normal regulators each decrease the pressure on one gauge,<br>"
+                                         + "but increase the pressure on another.");
+            var instructions3 = new Label("The Frimurderer decreases Frims, but increases Pazzles.<br>"
+                                         + "The Pazzlepaddler decreases Pazzles, but increases Gonks.<br>"
+                                         + "The Gonkiller is wanted in nine kingdoms.");
+            var instructions4 = new Label("I'm kidding, of course. It decreases Gonks and increases Frims.");
+            var instructions5 = new Label("The fourth regulator, the Fix-It-All, fixes everything. As its name implies.");
+            var instructions6 = new Label("Controls:<br>"
+                                         + "    Left or A: Move left.<br>"
+                                         + "    Right or D: Move right.<br>"
+                                         + "    Up or W: Turn on whichever regulator you are standing in front of.<br>"
+                                         + "    Down or S: Select Fix-It-All operation.<br>");
+            var pressSpace = new Label("Press spacebar to start.");
+            
+            function initInstructions(label, yCoord, numberOfLines) {
+                label.font = "15px arial,sans-serif";
+                label.color = "white";
+                label.x = 30;
+                label.y = yCoord;
+                label.width = Constants.stageWidth - 60;
+                label.height = 15 * numberOfLines;
+            }
+            
             this.height = Constants.stageHeight;
             this.width = Constants.stageWidth;
             this.backgroundColor = "#333333";
             
-            var pressSpace = new Label("Press spacebar to start.");
+            initInstructions(instructions1, 30, 1);
+            initInstructions(instructions2, 55, 2);
+            initInstructions(instructions3, 95, 3);
+            initInstructions(instructions4, 150, 1);
+            initInstructions(instructions5, 175, 1);
+            initInstructions(instructions6, 200, 5);
+            
             pressSpace.font = "50px arial,sans-serif";
             pressSpace.color = "white";
             pressSpace.x = 50;
-            pressSpace.y = 125;
+            pressSpace.y = Constants.stageHeight - 100;
             pressSpace.width = Constants.stageWidth;
             
             this.addChild(pressSpace);
+            this.addChild(instructions1);
+            this.addChild(instructions2);
+            this.addChild(instructions3);
+            this.addChild(instructions4);
+            this.addChild(instructions5);
+            this.addChild(instructions6);
         }
     }),
     
@@ -627,10 +687,13 @@ var Scenes = {
             var frims   = new Indicator.dial("Frims", images.frims, 25, 10, 90, 0.1, 0.09);
             var pazzles = new Indicator.dial("Pazzles", images.pazzles, 230, 30, 85, 0.12, 0.1);
             var gonks   = new Indicator.dial("Gonks", images.gonks, 435, 5, 50, 0.08, 0.07);
-            var frimurderer = new Indicator.panel(images.panel, sounds.panel, 0, pazzles, frims);
-            var pazzlepaddler = new Indicator.panel(images.panel, sounds.panel, 160, gonks, pazzles);
-            var gonkiller = new Indicator.panel(images.panel, sounds.panel, 320, frims, gonks);
-            var fixitall = new Indicator.megapanel(images.megapanel, sounds.megapanel, 480, frims, pazzles, gonks);
+            var frimurderer   = new Indicator.panel("Frimurderer", images.panel, sounds.panel,
+                                                  0, pazzles, frims);
+            var pazzlepaddler = new Indicator.panel("Pazzlepaddler", images.panel, sounds.panel,
+                                                    160, gonks, pazzles);
+            var gonkiller     = new Indicator.panel("Gonkiller", images.panel, sounds.panel,
+                                                320, frims, gonks);
+            var fixitall = new Indicator.megapanel("Fix-It-All", images.megapanel, sounds.megapanel, 480, frims, pazzles, gonks);
             var children = [];
             var i;
             
@@ -672,12 +735,20 @@ var Scenes = {
                     this.addChild(children[i].safeZone);
                     this.addChild(children[i].highZone);
                     this.addChild(children[i].needle);
+                }
+                if (children[i].nameLabel) {
                     this.addChild(children[i].nameLabel);
                 }
                 if (children[i].explosion) {
                     this.addChild(children[i].explosion);
                 }
             }
+            
+            this.addEventListener(Event.ENTER_FRAME, function () {
+                if (this.machine.exploding) {
+                    this.game.popScene(this);
+                }
+            });
         }
     })
 };
@@ -726,6 +797,8 @@ $(document).ready(function () {
             }
         };
         bindKeys(game);
+        game.score = 0;
+        var gameOverScene = new Scenes.gameOver(game);
         var factoryScene = new Scenes.factory(images, sounds, game);
         var titleScene = new Scenes.title();
         titleScene.addEventListener(Event.ENTER_FRAME, function () {
@@ -734,6 +807,7 @@ $(document).ready(function () {
             }
         });
         
+        game.pushScene(gameOverScene);
         game.pushScene(factoryScene);
         game.pushScene(titleScene);
     };
