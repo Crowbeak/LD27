@@ -20,6 +20,7 @@ enchant();
 
 var Constants = {
     blue: "#00CCFF",
+    fps: 20,
     playerSpeed: 8,
     red: "#FF0000",
     seconds: 10,
@@ -179,7 +180,7 @@ var Warning = {
 
 var Indicator = {
     dial: Class.create(Sprite, {
-        initialize: function (images, xCoord, minSafe, maxSafe) {
+        initialize: function (images, xCoord, minSafe, maxSafe, upRate, downRate) {
             "use strict";
             Sprite.call(this, images.dial.width, images.dial.height);
             
@@ -191,7 +192,10 @@ var Indicator = {
             this.maxValue = 100;
             this.minSafe = minSafe;
             this.maxSafe = maxSafe;
-            this.value = Math.floor(((this.maxSafe - this.minSafe) / 2) + this.minSafe);
+            this.value = ((this.maxSafe - this.minSafe) / 2) + this.minSafe;
+            this.upRate = upRate;
+            this.downRate = downRate;
+            
             // !!!
             this.tempDisplay = new Label(this.value);
             this.tempDisplay.x = this.x;
@@ -199,7 +203,7 @@ var Indicator = {
             this.tempDisplay.color = "black";
             this.tempDisplay.font = "50px arial,sans-serif";
             this.addEventListener(Event.ENTER_FRAME, function () {
-                this.tempDisplay.text = this.value;
+                this.tempDisplay.text = Math.floor(this.value);
             });
             
             this.danger = new Warning.danger(images.warning, this);
@@ -208,7 +212,7 @@ var Indicator = {
     }),
     
     panel: Class.create(Sprite, {
-        initialize: function (img, xCoord, upRate, downRate, upDial, downDial) {
+        initialize: function (img, xCoord, upDial, downDial) {
             "use strict";
             Sprite.call(this, img.width, img.height);
             
@@ -242,26 +246,24 @@ var Indicator = {
             };
             
             this.upDial = upDial;
-            this.upRate = upRate;
             this.downDial = downDial;
-            this.downRate = downRate;
         },
         
         onenterframe: function modifyDials() {
             "use strict";
             if (this.state === 1) {
-                if ((this.upDial.value + this.upRate) <= this.upDial.maxValue) {
-                    this.upDial.value += this.upRate;
+                if ((this.upDial.value + this.upDial.upRate) <= this.upDial.maxValue) {
+                    this.upDial.value += this.upDial.upRate;
                 }
-                if ((this.downDial.value - this.downRate) >= this.upDial.minValue) {
-                    this.downDial.value -= this.downRate;
+                if ((this.downDial.value - this.downDial.downRate) >= this.downDial.minValue) {
+                    this.downDial.value -= this.downDial.downRate;
                 }
             }
         }
     }),
     
     megapanel: Class.create(Sprite, {
-        initialize: function (img, xCoord, upRate, downRate, fDial, pDial, gDial) {
+        initialize: function (img, xCoord, fDial, pDial, gDial) {
             "use strict";
             Sprite.call(this, img.width, img.height);
             
@@ -315,11 +317,48 @@ var Indicator = {
                 }
             };
             
-            this.upRate = upRate;
-            this.downRate = downRate;
             this.fDial = fDial;
             this.pDial = pDial;
             this.gDial = gDial;
+        },
+        
+        onenterframe: function modifyDials() {
+            "use strict";
+            if (this.state === 1) {
+                if (this.selection === 0) {
+                    if ((this.fDial.value - this.fDial.downRate) >= this.fDial.minValue) {
+                        this.fDial.value -= this.fDial.downRate;
+                    }
+                    if ((this.pDial.value + this.pDial.upRate) <= this.pDial.maxValue) {
+                        this.pDial.value += this.pDial.upRate;
+                    }
+                    if ((this.gDial.value + this.gDial.upRate) <= this.gDial.maxValue) {
+                        this.gDial.value += this.gDial.upRate;
+                    }
+                }
+                if (this.selection === 1) {
+                    if ((this.pDial.value - this.pDial.downRate) >= this.pDial.minValue) {
+                        this.pDial.value -= this.pDial.downRate;
+                    }
+                    if ((this.fDial.value + this.fDial.upRate) <= this.fDial.maxValue) {
+                        this.fDial.value += this.fDial.upRate;
+                    }
+                    if ((this.gDial.value + this.gDial.upRate) <= this.gDial.maxValue) {
+                        this.gDial.value += this.gDial.upRate;
+                    }
+                }
+                if (this.selection === 2) {
+                    if ((this.gDial.value - this.gDial.downRate) >= this.gDial.minValue) {
+                        this.gDial.value -= this.gDial.downRate;
+                    }
+                    if ((this.fDial.value + this.fDial.upRate) <= this.fDial.maxValue) {
+                        this.fDial.value += this.fDial.upRate;
+                    }
+                    if ((this.pDial.value + this.pDial.upRate) <= this.pDial.maxValue) {
+                        this.pDial.value += this.pDial.upRate;
+                    }
+                }
+            }
         }
     })
 };
@@ -382,13 +421,13 @@ var Scenes = {
             Scene.call(this);
             this.game = game;
             
-            var frims = new Indicator.dial(images.frims, 25, 10, 90);
-            var pazzles = new Indicator.dial(images.pazzles, 230, 30, 85);
-            var gonks = new Indicator.dial(images.gonks, 435, 5, 50);
-            var whatsit = new Indicator.panel(images.panel, 0, 1, 1, frims, pazzles);
-            var thingymabob = new Indicator.panel(images.panel, 160, 1, 1, pazzles, gonks);
-            var doodad = new Indicator.panel(images.panel, 320, 1, 1, gonks, frims);
-            var fixitall = new Indicator.megapanel(images.megapanel, 480, 1, 2, frims, pazzles, gonks);
+            var frims = new Indicator.dial(images.frims, 25, 10, 90, 0.1, 0.09);
+            var pazzles = new Indicator.dial(images.pazzles, 230, 30, 85, 0.12, 0.1);
+            var gonks = new Indicator.dial(images.gonks, 435, 5, 50, 0.08, 0.07);
+            var whatsit = new Indicator.panel(images.panel, 0, frims, pazzles);
+            var thingymabob = new Indicator.panel(images.panel, 160, pazzles, gonks);
+            var doodad = new Indicator.panel(images.panel, 320, gonks, frims);
+            var fixitall = new Indicator.megapanel(images.megapanel, 480, frims, pazzles, gonks);
             var children = [];
             var i;
             
@@ -442,7 +481,7 @@ $(document).ready(function () {
                  'img/player.png',
                  'img/safe.png',
                  'img/warning.png');
-    game.fps = 20;
+    game.fps = Constants.fps;
     game.onload = function () {
         console.info("Game loaded.");
         var images = {
