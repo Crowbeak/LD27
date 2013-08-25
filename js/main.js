@@ -19,6 +19,7 @@ enchant();
 
 // If fps value changes, manual changes must be made wherever you have tl.cue.
 var Constants = {
+    baseRate: 0.08,
     blue: "#00CCFF",
     fps: 20,
     gray: "#666666",
@@ -227,7 +228,7 @@ var Warning = {
 
 var Indicator = {
     dial: Class.create(Sprite, {
-        initialize: function (name, images, sound, xCoord, minSafe, maxSafe, upRate, downRate) {
+        initialize: function (name, images, sound, xCoord, minSafe, maxSafe, machine) {
             "use strict";
             Sprite.call(this, images.dial.width, images.dial.height);
             
@@ -237,14 +238,17 @@ var Indicator = {
             this.x = xCoord;
             this.y = 220 - this.height - 30;
             this.lost = false;
+            this.machine = machine;
             
             this.minValue = 0;
             this.maxValue = 100;
             this.minSafe = minSafe;
             this.maxSafe = maxSafe;
             this.value = ((this.maxSafe - this.minSafe) / 2) + this.minSafe;
-            this.upRate = upRate;
-            this.downRate = downRate;
+            this.upBase = Constants.baseRate;
+            this.upRate = this.upBase;
+            this.downBase = 2 * Constants.baseRate;
+            this.downRate = this.downBase;
             
             this.barRatio = (this.width - 10) / this.maxValue;
             this.lowZone = new Label();
@@ -292,9 +296,13 @@ var Indicator = {
         
         onenterframe: function () {
             "use strict";
-            var testNeedleX = this.lowZone.x + (this.value * this.barRatio) - 1;
-            if ((this.needle.minX < testNeedleX) && (testNeedleX < this.needle.maxX)) {
-                this.needle.x = testNeedleX;
+            if ((this.value > this.maxValue) || (this.value < this.minValue)) {
+                this.lost = true;
+            } else {
+                var testNeedleX = this.lowZone.x + (this.value * this.barRatio) - 1;
+                if ((this.needle.minX < testNeedleX) && (testNeedleX < this.needle.maxX)) {
+                    this.needle.x = testNeedleX;
+                }
             }
         }
     }),
@@ -467,8 +475,8 @@ var Indicator = {
             "use strict";
             if (this.state === 1) {
                 if (this.selection === 0) {
-                    if ((this.fDial.value - this.fDial.downRate) >= this.fDial.minValue) {
-                        this.fDial.value -= this.fDial.downRate;
+                    if ((this.fDial.value - (1.5 * this.fDial.downRate)) >= this.fDial.minValue) {
+                        this.fDial.value -= (1.5 * this.fDial.downRate);
                     }
                     if ((this.pDial.value + this.pDial.upRate) <= this.pDial.maxValue) {
                         this.pDial.value += this.pDial.upRate;
@@ -478,8 +486,8 @@ var Indicator = {
                     }
                 }
                 if (this.selection === 1) {
-                    if ((this.pDial.value - this.pDial.downRate) >= this.pDial.minValue) {
-                        this.pDial.value -= this.pDial.downRate;
+                    if ((this.pDial.value - (1.5 * this.pDial.downRate)) >= this.pDial.minValue) {
+                        this.pDial.value -= (1.5 * this.pDial.downRate);
                     }
                     if ((this.fDial.value + this.fDial.upRate) <= this.fDial.maxValue) {
                         this.fDial.value += this.fDial.upRate;
@@ -489,8 +497,8 @@ var Indicator = {
                     }
                 }
                 if (this.selection === 2) {
-                    if ((this.gDial.value - this.gDial.downRate) >= this.gDial.minValue) {
-                        this.gDial.value -= this.gDial.downRate;
+                    if ((this.gDial.value - (1.5 * this.gDial.downRate)) >= this.gDial.minValue) {
+                        this.gDial.value -= (1.5 * this.gDial.downRate);
                     }
                     if ((this.fDial.value + this.fDial.upRate) <= this.fDial.maxValue) {
                         this.fDial.value += this.fDial.upRate;
@@ -567,7 +575,7 @@ var Player = Class.create(Sprite, {
 
 
 var Machine = Class.create(Label, {
-    initialize: function (game, frimRate, pazzleRate, gonkRate) {
+    initialize: function (game) {
         "use strict";
         Label.call(this);
         this.game = game;
@@ -580,9 +588,10 @@ var Machine = Class.create(Label, {
             gonkDial: {}
         };
         
-        this.frimRate = frimRate;
-        this.pazzleRate = pazzleRate;
-        this.gonkRate = gonkRate;
+        this.baseRate = Constants.baseRate;
+        this.frimRate = this.baseRate;
+        this.pazzleRate = this.baseRate;
+        this.gonkRate = this.baseRate;
         
         this.exploding = false;
         
@@ -697,11 +706,11 @@ var Scenes = {
             this.gameOverSound = sounds.gameOver;
             
             var frims   = new Indicator.dial("Frims", images.frims, sounds.danger,
-                                             25, 10, 90, 0.1, 0.09);
+                                             25, 20, 90, this.machine);
             var pazzles = new Indicator.dial("Pazzles", images.pazzles, sounds.danger,
-                                             230, 10, 90, 0.12, 0.1);
+                                             230, 10, 80, this.machine);
             var gonks   = new Indicator.dial("Gonks", images.gonks, sounds.danger,
-                                             435, 10, 90, 0.08, 0.07);
+                                             435, 35, 90, this.machine);
             var frimurderer   = new Indicator.panel("Frimurderer", images.panel, sounds.panel,
                                                   0, pazzles, frims);
             var pazzlepaddler = new Indicator.panel("Pazzlepaddler", images.panel, sounds.panel,
@@ -718,7 +727,7 @@ var Scenes = {
             this.player.interactables.push(gonkiller);
             this.player.interactables.push(fixitall);
             
-            this.machine = new Machine(game, 0.05, 0.06, 0.04);
+            this.machine = new Machine(game);
             this.machine.dials.frimDial = frims;
             this.machine.dials.pazzleDial = pazzles;
             this.machine.dials.gonkDial = gonks;
@@ -778,8 +787,8 @@ $(document).ready(function () {
                  'img/player.png',
                  'img/safe.png',
                  'img/warning.png',
-                 'sound/achoo.mp3',
                  'sound/bork.mp3',
+                 'sound/exploded.mp3',
                  'sound/gerk.mp3',
                  'sound/klaxon.mp3');
     game.fps = Constants.fps;
@@ -812,7 +821,7 @@ $(document).ready(function () {
                 onOff: game.assets['sound/gerk.mp3'],
                 polystate: game.assets['sound/bork.mp3']
             },
-            gameOver: game.assets['sound/achoo.mp3']
+            gameOver: game.assets['sound/exploded.mp3']
         };
         
         bindKeys(game);
