@@ -17,7 +17,10 @@
 
 enchant();
 
-
+// If fps value changes, manual changes must be made in:
+//  - Indicator.panel.use
+//  - Indicator.megapanel.use
+//  - Indicator.megapanel.select
 var Constants = {
     blue: "#00CCFF",
     fps: 20,
@@ -216,6 +219,10 @@ var Indicator = {
             "use strict";
             Sprite.call(this, img.width, img.height);
             
+            var makeUsable = function () {
+                this.usable = true;
+            };
+            
             this.image = img;
             this.x = xCoord;
             this.y = 240;
@@ -239,9 +246,8 @@ var Indicator = {
                         this.state += 1;
                     }
                     this.usable = false;
-                    setTimeout(useFunction, 1000);
-                } else {
-                    this.usable = true;
+                    // If FPS changes, change numerical value.
+                    this.tl.cue({ 7: makeUsable });
                 }
             };
             
@@ -266,6 +272,13 @@ var Indicator = {
         initialize: function (img, xCoord, fDial, pDial, gDial) {
             "use strict";
             Sprite.call(this, img.width, img.height);
+            
+            var makeSelectable = function () {
+                this.selectable = true;
+            };
+            var makeUsable = function () {
+                this.usable = true;
+            };
             
             this.image = img;
             this.x = xCoord;
@@ -297,9 +310,8 @@ var Indicator = {
                         this.selection += 1;
                     }
                     this.selectable = false;
-                    setTimeout(selectFunction, 1000);
-                } else {
-                    this.selectable = true;
+                    // If FPS changes, change numerical value.
+                    this.tl.cue({ 7 : makeSelectable });
                 }
             };
             this.usable = true;
@@ -311,9 +323,8 @@ var Indicator = {
                         this.state += 1;
                     }
                     this.usable = false;
-                    setTimeout(useFunction, 1000);
-                } else {
-                    this.usable = true;
+                    // If FPS changes, change numerical value.
+                    this.tl.cue({ 7: makeUsable });
                 }
             };
             
