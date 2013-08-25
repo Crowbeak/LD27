@@ -181,7 +181,7 @@ var Switch = {
 
 var Warning = {
     danger: Class.create(Sprite, {
-        initialize: function (img, dial) {
+        initialize: function (img, dial, sound) {
             "use strict";
             Sprite.call(this, img.width, img.height);
             
@@ -190,14 +190,23 @@ var Warning = {
             this.x = this.dial.x + (this.dial.width / 2) - (this.width / 2);
             this.y = this.dial.y - this.height - 16;
             this.visible = false;
+            this.sound = sound;
+            this.canBuzz = true;
         },
         
         onenterframe: function updateWarning() {
             "use strict";
             if ((this.dial.value < this.dial.minSafe) || (this.dial.value > this.dial.maxSafe)) {
                 this.visible = true;
+                if (this.canBuzz) {
+                    this.sound.play();
+                    this.canBuzz = false;
+                }
             } else {
                 this.visible = false;
+                if (!this.canBuzz) {
+                    this.canBuzz = true;
+                }
             }
         }
     }),
@@ -218,7 +227,7 @@ var Warning = {
 
 var Indicator = {
     dial: Class.create(Sprite, {
-        initialize: function (name, images, xCoord, minSafe, maxSafe, upRate, downRate) {
+        initialize: function (name, images, sound, xCoord, minSafe, maxSafe, upRate, downRate) {
             "use strict";
             Sprite.call(this, images.dial.width, images.dial.height);
             
@@ -268,7 +277,7 @@ var Indicator = {
             this.needle.maxX = this.highZone.x + this.highZone.width - 2;
             this.needle.minX = this.lowZone.x;
             
-            this.danger = new Warning.danger(images.warning, this);
+            this.danger = new Warning.danger(images.warning, this, sound);
             this.safe = new Warning.safe(images.safe, this);
             
             this.nameLabel = new Label(name);
@@ -540,6 +549,7 @@ var Player = Class.create(Sprite, {
                 for (i = 0; i < this.interactables.length; i++) {
                     if (this.intersect(this.interactables[i].onSwitch)) {
                         this.interactables[i].use();
+                        this.frame = 2;
                     }
                 }
             } else if (this.game.input.down && !this.game.input.up) {
@@ -547,6 +557,7 @@ var Player = Class.create(Sprite, {
                 for (i = 0; i < this.interactables.length; i++) {
                     if (this.intersect(this.interactables[i].selector)) {
                         this.interactables[i].select();
+                        this.frame = 2;
                     }
                 }
             }
@@ -683,10 +694,14 @@ var Scenes = {
             console.info("Creating factory scene.");
             Scene.call(this);
             this.game = game;
+            this.gameOverSound = sounds.gameOver;
             
-            var frims   = new Indicator.dial("Frims", images.frims, 25, 10, 90, 0.1, 0.09);
-            var pazzles = new Indicator.dial("Pazzles", images.pazzles, 230, 30, 85, 0.12, 0.1);
-            var gonks   = new Indicator.dial("Gonks", images.gonks, 435, 5, 50, 0.08, 0.07);
+            var frims   = new Indicator.dial("Frims", images.frims, sounds.danger,
+                                             25, 10, 90, 0.1, 0.09);
+            var pazzles = new Indicator.dial("Pazzles", images.pazzles, sounds.danger,
+                                             230, 10, 90, 0.12, 0.1);
+            var gonks   = new Indicator.dial("Gonks", images.gonks, sounds.danger,
+                                             435, 10, 90, 0.08, 0.07);
             var frimurderer   = new Indicator.panel("Frimurderer", images.panel, sounds.panel,
                                                   0, pazzles, frims);
             var pazzlepaddler = new Indicator.panel("Pazzlepaddler", images.panel, sounds.panel,
@@ -746,6 +761,7 @@ var Scenes = {
             
             this.addEventListener(Event.ENTER_FRAME, function () {
                 if (this.machine.exploding) {
+                    this.gameOverSound.play();
                     this.game.popScene(this);
                 }
             });
@@ -762,6 +778,7 @@ $(document).ready(function () {
                  'img/player.png',
                  'img/safe.png',
                  'img/warning.png',
+                 'sound/achoo.mp3',
                  'sound/bork.mp3',
                  'sound/gerk.mp3',
                  'sound/klaxon.mp3');
@@ -794,11 +811,13 @@ $(document).ready(function () {
             megapanel: {
                 onOff: game.assets['sound/gerk.mp3'],
                 polystate: game.assets['sound/bork.mp3']
-            }
+            },
+            gameOver: game.assets['sound/achoo.mp3']
         };
+        
         bindKeys(game);
-        game.score = 0;
-        var gameOverScene = new Scenes.gameOver(game);
+        
+        var gameOverScene = new Scenes.gameOver(game, sounds);
         var factoryScene = new Scenes.factory(images, sounds, game);
         var titleScene = new Scenes.title();
         titleScene.addEventListener(Event.ENTER_FRAME, function () {
