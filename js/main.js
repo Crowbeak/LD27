@@ -19,7 +19,7 @@ enchant();
 
 // If fps value changes, manual changes must be made wherever you have tl.cue.
 var Constants = {
-    baseRate: 0.1,
+    baseRate: 0.12,
     blue: "#00CCFF",
     fps: 20,
     gray: "#666666",
