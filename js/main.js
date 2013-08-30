@@ -31,75 +31,77 @@ var Constants = {
 };
 if (Object.freeze) { Object.freeze(Constants); }
 
+// Bind spacebar to 'a' and allow WASD input
 function bindKeys(game) {
     "use strict";
     console.info("Binding keys.");
-    // Space as 'a' button.
     game.keybind(32, 'a');
-    // Add WASD movement functionality (doesn't overwrite arrow key movement)
     game.keybind(65, 'left');
     game.keybind(68, 'right');
     game.keybind(87, 'up');
     game.keybind(83, 'down');
 }
 
-
-var Timer = {
-    clock: Class.create(Label, {
-        initialize: function (panel) {
-            "use strict";
-            Label.call(this);
-            
-            this.panel = panel;
-            
-            this.x = this.panel.x + 45;
-            this.y = this.panel.y + 25;
-            this.color = Constants.blue;
-            this.font = "30px arial,sans-serif";
-            
-            this.canDecrement = false;
-            this.canIncrement = false;
-            this.makeDecrementable = function () {
-                if ((this.panel.state === 1) && (this.panel.timeLeft > 0)) {
-                    this.canDecrement = true;
-                }
-            };
-            this.makeIncrementable = function () {
-                if ((this.panel.state === 0) && (this.panel.timeLeft < 10)) {
-                    this.canIncrement = true;
-                }
-            };
-            this.decrement = function () {
-                if (this.panel.timeLeft > 0) {
-                    if (this.canDecrement === true) {
-                        this.panel.timeLeft -= 1;
-                        this.canDecrement = false;
-                        this.tl.cue({ 20: this.makeDecrementable });
-                    }
-                } else {
-                    this.panel.state = 0;
-                    this.canDecrement = false;
-                    this.tl.cue({ 20: this.makeIncrementable });
-                }
-            };
-            this.increment = function addSeconds() {
-                if (this.panel.timeLeft < 10) {
-                    if (this.canIncrement === true) {
-                        this.panel.timeLeft += 1;
-                        this.canIncrement = false;
-                        this.tl.cue({ 20: this.makeIncrementable });
-                    }
-                } else {
-                    this.canIncrement = false;
-                }
-            };
-        },
-        
-        onenterframe: function () {
-            "use strict";
-            this.text = this.panel.timeLeft;
+var Clock = Class.create(Label, {
+    initialize: function (panel) {
+        "use strict";
+        if ((this instanceof Clock) === false) {
+            return new Clock();
         }
-    })
+        Label.call(this);
+        
+        this.panel = panel;
+        this.x = this.panel.x + 45;
+        this.y = this.panel.y + 25;
+        this.canDecrement = false;
+        this.canIncrement = false;
+        
+        this.color = Constants.blue;
+        this.font = "30px arial,sans-serif";
+    },
+    
+    onenterframe: function () {
+        "use strict";
+        this.text = this.panel.timeLeft;
+    }
+});
+Clock.prototype.decrement = function () {
+    "use strict";
+    if (this.panel.timeLeft > 0) {
+        if (this.canDecrement === true) {
+            this.panel.timeLeft -= 1;
+            this.canDecrement = false;
+            this.tl.cue({ 20: this.makeDecrementable });
+        }
+    } else {
+        this.panel.state = 0;
+        this.canDecrement = false;
+        this.tl.cue({ 20: this.makeIncrementable });
+    }
+};
+Clock.prototype.increment = function addSeconds() {
+    "use strict";
+    if (this.panel.timeLeft < 10) {
+        if (this.canIncrement === true) {
+            this.panel.timeLeft += 1;
+            this.canIncrement = false;
+            this.tl.cue({ 20: this.makeIncrementable });
+        }
+    } else {
+        this.canIncrement = false;
+    }
+};
+Clock.prototype.makeDecrementable = function () {
+    "use strict";
+    if ((this.panel.state === 1) && (this.panel.timeLeft > 0)) {
+        this.canDecrement = true;
+    }
+};
+Clock.prototype.makeIncrementable = function () {
+    "use strict";
+    if ((this.panel.state === 0) && (this.panel.timeLeft < 10)) {
+        this.canIncrement = true;
+    }
 };
 
 
@@ -322,7 +324,7 @@ var Indicator = {
             this.y = 240;
             
             this.timeLeft = Constants.seconds;
-            this.clock = new Timer.clock(this);
+            this.clock = new Clock(this);
             
             // Two states
             //  - 0: Off.
@@ -408,7 +410,7 @@ var Indicator = {
             this.usable = true;
             
             this.timeLeft = Constants.seconds;
-            this.clock = new Timer.clock(this);
+            this.clock = new Clock(this);
             
             // Two states
             //  - 0: Off.
@@ -835,7 +837,9 @@ var Scenes = {
 };
 
 
-$(document).ready(function () {
+// Initialize and start the game.
+//$(document).ready(function () {
+window.onload = function () {
     "use strict";
     var game = new Core(Constants.stageWidth, Constants.stageHeight);
     game.preload('img/dial.png',
@@ -843,10 +847,10 @@ $(document).ready(function () {
                  'img/player.png',
                  'img/safe.png',
                  'img/warning.png',
-                 'sound/bork.mp3',
-                 'sound/exploded.mp3',
-                 'sound/gerk.mp3',
-                 'sound/klaxon.mp3');
+                 'sound/bork.wav',
+                 'sound/exploded.wav',
+                 'sound/gerk.wav',
+                 'sound/klaxon.wav');
     game.fps = Constants.fps;
     game.onload = function () {
         console.info("Game loaded.");
@@ -871,13 +875,13 @@ $(document).ready(function () {
             player: game.assets['img/player.png']
         };
         var sounds = {
-            danger: game.assets['sound/klaxon.mp3'],
-            panel: game.assets['sound/gerk.mp3'],
+            danger: game.assets['sound/klaxon.wav'],
+            panel: game.assets['sound/gerk.wav'],
             megapanel: {
-                onOff: game.assets['sound/gerk.mp3'],
-                polystate: game.assets['sound/bork.mp3']
+                onOff: game.assets['sound/gerk.wav'],
+                polystate: game.assets['sound/bork.wav']
             },
-            gameOver: game.assets['sound/exploded.mp3']
+            gameOver: game.assets['sound/exploded.wav']
         };
         
         bindKeys(game);
@@ -896,4 +900,5 @@ $(document).ready(function () {
         game.pushScene(titleScene);
     };
     game.start();
-});
+//});
+};
