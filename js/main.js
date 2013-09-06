@@ -23,6 +23,7 @@ var Constants = {
     blue: "#00CCFF",
     fps: 20,
     gray: "#666666",
+    panelY: 240,
     playerSpeed: 10,
     red: "#FF0000",
     seconds: 10,
@@ -42,74 +43,13 @@ function bindKeys(game) {
     game.keybind(83, 'down');
 }
 
-var Clock = Class.create(Label, {
-    initialize: function (panel) {
-        "use strict";
-        if ((this instanceof Clock) === false) {
-            return new Clock();
-        }
-        Label.call(this);
-        
-        this.panel = panel;
-        this.x = this.panel.x + 45;
-        this.y = this.panel.y + 25;
-        this.canDecrement = false;
-        this.canIncrement = false;
-        
-        this.color = Constants.blue;
-        this.font = "30px arial,sans-serif";
-    },
-    
-    onenterframe: function () {
-        "use strict";
-        this.text = this.panel.timeLeft;
-    }
-});
-Clock.prototype.decrement = function () {
-    "use strict";
-    if (this.panel.timeLeft > 0) {
-        if (this.canDecrement === true) {
-            this.panel.timeLeft -= 1;
-            this.canDecrement = false;
-            this.tl.cue({ 20: this.makeDecrementable });
-        }
-    } else {
-        this.panel.state = 0;
-        this.canDecrement = false;
-        this.tl.cue({ 20: this.makeIncrementable });
-    }
-};
-Clock.prototype.increment = function addSeconds() {
-    "use strict";
-    if (this.panel.timeLeft < 10) {
-        if (this.canIncrement === true) {
-            this.panel.timeLeft += 1;
-            this.canIncrement = false;
-            this.tl.cue({ 20: this.makeIncrementable });
-        }
-    } else {
-        this.canIncrement = false;
-    }
-};
-Clock.prototype.makeDecrementable = function () {
-    "use strict";
-    if ((this.panel.state === 1) && (this.panel.timeLeft > 0)) {
-        this.canDecrement = true;
-    }
-};
-Clock.prototype.makeIncrementable = function () {
-    "use strict";
-    if ((this.panel.state === 0) && (this.panel.timeLeft < 10)) {
-        this.canIncrement = true;
-    }
-};
-
 
 var Switch = {
     onOff: Class.create(Label, {
         initialize: function (panel) {
             "use strict";
             Label.call(this, "ON");
+            console.info("Creating on/off switch.");
             
             this.panel = panel;
             this.onColor = Constants.blue;
@@ -145,6 +85,7 @@ var Switch = {
         initialize: function (megapanel) {
             "use strict";
             Label.call(this, "FRIMS DOWN");
+            console.info("Creating polystate switch.");
             
             this.megapanel = megapanel;
             this.onColor = Constants.blue;
@@ -180,6 +121,220 @@ var Switch = {
         }
     })
 };
+
+
+/**
+ * Namespace for switch panel instantiation.
+ *
+ */
+(function (SwitchPanels) {
+    "use strict";
+
+    /**
+     * Class for display and management of switch panel timers.
+     *
+     * Derived from enchant.Label().
+     *
+     * @private
+     * @param {Panel} [panel] The Panel to which the timer is attached.
+     *
+     */
+    var Timer = Class.create(Label, {
+        initialize: function (panel) {
+            // !!! if ((this instanceof Timer) === false) {
+            //    return new Timer();
+            //}
+            Label.call(this);
+            console.info("Creating timer.");
+            
+            this.panel = panel;
+            this.x = this.panel.x + 45;
+            this.y = this.panel.y + 25;
+            this.canDecrement = false;
+            this.canIncrement = false;
+            
+            this.color = Constants.blue;
+            this.font = "30px arial,sans-serif";
+        },
+        
+        onenterframe: function () {
+            this.text = this.panel.timeLeft;
+        }
+    });
+    
+    /**
+     * Enables timer decrementing.
+     *
+     * Makes the timer decrementable if it is both on and its time left
+     * is greater than zero.
+     *
+     */
+    Timer.prototype.makeDecrementable = function () {
+        if ((this.panel.state === 1) && (this.panel.timeLeft > 0)) {
+            this.canDecrement = true;
+            console.info("Timer is now decrementable.");
+        }
+    };
+    
+    /**
+     * Enables time incrementing.
+     * 
+     * Makes the timer incrementable if it is both off and its time left
+     * is less than 10.
+     *
+     */
+    Timer.prototype.makeIncrementable = function () {
+        if ((this.panel.state === 0) && (this.panel.timeLeft < 10)) {
+            this.canIncrement = true;
+            console.info("Timer is now incrementable.");
+        }
+    };
+    
+    /**
+     * Decrements time on clock.
+     * 
+     * Decrements the time on the clock once per second unless the
+     * timer has reached 0, in which case it turns the panel off.
+     * @private
+     *
+     * TODO: Create function to turn panel off/on
+     *
+     */
+    Timer.prototype.decrement = function () {
+        if (this.panel.timeLeft > 0) {
+            if (this.canDecrement === true) {
+                this.panel.timeLeft -= 1;
+                this.canDecrement = false;
+                this.tl.cue({ 20: this.makeDecrementable });
+                console.info("Timer no longer decrementable.");
+            }
+        } else {
+            this.panel.state = 0;
+            this.canDecrement = false;
+            this.tl.cue({ 20: this.makeIncrementable });
+            console.info("Timer turned off automagically.");
+        }
+    };
+    
+    /**
+     * Increments time on clock.
+     * 
+     * Increments the time on the clock once per second unless the
+     * timer has reached 10.
+     * @private
+     *
+     */
+    Timer.prototype.increment = function addSeconds() {
+        if (this.panel.timeLeft < 10) {
+            if (this.canIncrement === true) {
+                this.panel.timeLeft += 1;
+                this.canIncrement = false;
+                this.tl.cue({ 20: this.makeIncrementable });
+                console.log("Timer has been incremented.");
+            }
+        } else {
+            this.canIncrement = false;
+        }
+    };
+    
+    /**
+     * Class for display and management of switch panels.
+     *
+     * Derived from enchant.Sprite().
+     *
+     * @param {String} [name] Name of the panel to be displayed.
+     * @param {Image} [img] Preloaded image asset to be used for the panel.
+     * @param {Sound} [sound] Preloaded sound asset to be used for the on/off switch.
+     * @param {Number} [xCoord] x-coordinate where the panel will be placed.
+     * @param {Dial} [upDial] Dial to be increased when this panel is switched on.
+     * @param {Dial} [downDial] Dial to be decreased when this panel is switched on.
+     */
+    SwitchPanels.panel = Class.create(Sprite, {
+        initialize: function (name, img, sound, xCoord, upDial, downDial) {
+            Sprite.call(this, img.width, img.height);
+            
+            this.sound = sound;
+            this.image = img;
+            this.x = xCoord;
+            this.y = Constants.panelY;
+            
+            this.timeLeft = Constants.seconds;
+            this.clock = new Timer(this);
+            
+            // Two states
+            //  - 0: Off.
+            //  - 1: On.
+            this.state = 0;
+            
+            this.onSwitch = new Switch.onOff(this);
+            this.usable = true;
+            
+            this.upDial = upDial;
+            this.downDial = downDial;
+            
+            // !!! Create panel label function
+            this.nameLabel = new Label(name);
+            this.nameLabel.width = 120;
+            this.nameLabel.height = 18;
+            this.nameLabel.font = "18px arial, sans-serif";
+            this.nameLabel.color = "black";
+            this.nameLabel.x = this.x + ((this.width - this.nameLabel.width) / 2);
+            this.nameLabel.y = this.y + 70;
+        },
+        
+        onenterframe: function () {
+            if (this.state === 1) {
+                if ((this.upDial.value + this.upDial.upRate) <= this.upDial.maxValue) {
+                    this.upDial.value += this.upDial.upRate;
+                } else {
+                    this.upDial.lost = true;
+                    console.info("Loss due to a dial at maximum value.");
+                }
+                if ((this.downDial.value - this.downDial.downRate) >= this.downDial.minValue) {
+                    this.downDial.value -= this.downDial.downRate;
+                } else {
+                    this.downDial.lost = true;
+                    console.info("Loss due to a dial at minimum value.");
+                }
+            }
+            this.clock.decrement();
+            this.clock.increment();
+        }
+    });
+    
+    /**
+     * Sets panel on/off switch to a usable state..
+     *
+     */
+    SwitchPanels.panel.prototype.makeUsable = function () {
+        this.usable = true;
+    };
+    
+    /**
+    * Uses the panel.
+    * 
+    * If the panel is off, it will turn on, or vice-versa.
+    */
+    SwitchPanels.panel.prototype.use = function () {
+        if (this.usable) {
+            if (this.state === 1) {
+                this.tl.clear();
+                this.state = 0;
+                this.sound.play();
+                this.clock.canDecrement = false;
+                this.clock.tl.cue({ 20: this.clock.makeIncrementable });
+            } else {
+                this.tl.clear();
+                this.state = 1;
+                this.sound.play();
+                this.clock.canDecrement = true;
+                this.clock.canIncrement = false;
+            }
+            this.usable = false;
+            this.tl.cue({ 7: this.makeUsable });
+        }
+    };
+}(window.SwitchPanels = window.SwitchPanels || {}));
 
 
 var Warning = {
@@ -307,7 +462,7 @@ var Indicator = {
                 }
             }
         }
-    }),
+    })/*,
     
     panel: Class.create(Sprite, {
         initialize: function (name, img, sound, xCoord, upDial, downDial) {
@@ -331,6 +486,7 @@ var Indicator = {
             //  - 1: On.
             this.state = 0;
             
+            // !!! actionPoint is unused because intersect()
             this.actionPoint = this.x + (this.width / 2);
             this.onSwitch = new Switch.onOff(this);
             this.usable = true;
@@ -371,6 +527,7 @@ var Indicator = {
             if (this.state === 1) {
                 if ((this.upDial.value + this.upDial.upRate) <= this.upDial.maxValue) {
                     this.upDial.value += this.upDial.upRate;
+                    // !!! Clean this up! Can be if/else because the enclosing if statement already checks to make sure you don't go over before incrementing.
                     if ((this.upDial.value > this.upDial.maxValue) || (this.upDial.value < this.upDial.minValue)) {
                         this.upDial.lost = true;
                         console.info("Loss due to a dial at maximum value.");
@@ -521,6 +678,7 @@ var Indicator = {
             this.clock.increment();
         }
     })
+    */
 };
 
 
@@ -739,6 +897,7 @@ var Scenes = {
             "use strict";
             console.info("Creating factory scene.");
             Scene.call(this);
+            var sp = window.SwitchPanels;
             this.game = game;
             this.gameOverSound = sounds.gameOver;
             
@@ -748,13 +907,13 @@ var Scenes = {
                                              230, 10, 70, this.machine);
             var gonks   = new Indicator.dial("Gonks", images.gonks, sounds.danger,
                                              435, 45, 90, this.machine);
-            var frimurderer   = new Indicator.panel("Frimurderer", images.panel, sounds.panel,
+            var frimurderer   = new sp.panel("Frimurderer", images.panel, sounds.panel,
                                                   0, pazzles, frims);
-            var pazzlepaddler = new Indicator.panel("Pazzlepaddler", images.panel, sounds.panel,
+            var pazzlepaddler = new sp.panel("Pazzlepaddler", images.panel, sounds.panel,
                                                     160, gonks, pazzles);
-            var gonkiller     = new Indicator.panel("Gonkiller", images.panel, sounds.panel,
+            var gonkiller     = new sp.panel("Gonkiller", images.panel, sounds.panel,
                                                 320, frims, gonks);
-            var fixitall = new Indicator.megapanel("Fix-It-All", images.megapanel, sounds.megapanel, 480, frims, pazzles, gonks);
+            // !!! var fixitall = new Indicator.megapanel("Fix-It-All", images.megapanel, sounds.megapanel, 480, frims, pazzles, gonks);
             var seconds = new Label();
             var children = [];
             var i;
@@ -763,7 +922,7 @@ var Scenes = {
             this.player.interactables.push(frimurderer);
             this.player.interactables.push(pazzlepaddler);
             this.player.interactables.push(gonkiller);
-            this.player.interactables.push(fixitall);
+            // !!! this.player.interactables.push(fixitall);
             
             this.machine = new Machine(game);
             this.machine.dials.frimDial = frims;
@@ -795,7 +954,7 @@ var Scenes = {
             children.push(frimurderer);
             children.push(pazzlepaddler);
             children.push(gonkiller);
-            children.push(fixitall);
+            // !!! children.push(fixitall);
             children.push(this.player);
             children.push(this.machine);
             children.push(seconds);
