@@ -250,7 +250,7 @@ var Switch = {
      * @param {Dial} [downDial] Dial to be decreased when this panel is switched on.
      */
     SwitchPanels.panel = Class.create(Sprite, {
-        initialize: function (name, img, sound, xCoord, upDial, downDial) {
+        initialize: function (name, img, sound, xCoord, dials) {
             Sprite.call(this, img.width, img.height);
             
             this.sound = sound;
@@ -269,8 +269,8 @@ var Switch = {
             this.onSwitch = new Switch.onOff(this);
             this.usable = true;
             
-            this.upDial = upDial;
-            this.downDial = downDial;
+            this.upDial = dials.upDial;
+            this.downDial = dials.downDial;
             
             // !!! Create panel label function
             this.nameLabel = new Label(name);
@@ -463,88 +463,6 @@ var Indicator = {
             }
         }
     })/*,
-    
-    panel: Class.create(Sprite, {
-        initialize: function (name, img, sound, xCoord, upDial, downDial) {
-            "use strict";
-            Sprite.call(this, img.width, img.height);
-            
-            var makeUsable = function () {
-                this.usable = true;
-            };
-            
-            this.sound = sound;
-            this.image = img;
-            this.x = xCoord;
-            this.y = 240;
-            
-            this.timeLeft = Constants.seconds;
-            this.clock = new Clock(this);
-            
-            // Two states
-            //  - 0: Off.
-            //  - 1: On.
-            this.state = 0;
-            
-            // !!! actionPoint is unused because intersect()
-            this.actionPoint = this.x + (this.width / 2);
-            this.onSwitch = new Switch.onOff(this);
-            this.usable = true;
-            this.use = function useFunction() {
-                if (this.usable) {
-                    if (this.state === 1) {
-                        this.tl.clear();
-                        this.state = 0;
-                        this.sound.play();
-                        this.clock.canDecrement = false;
-                        this.clock.tl.cue({ 20: this.clock.makeIncrementable });
-                    } else {
-                        this.tl.clear();
-                        this.state = 1;
-                        this.sound.play();
-                        this.clock.canDecrement = true;
-                        this.clock.canIncrement = false;
-                    }
-                    this.usable = false;
-                    this.tl.cue({ 7: makeUsable });
-                }
-            };
-            
-            this.upDial = upDial;
-            this.downDial = downDial;
-            
-            this.nameLabel = new Label(name);
-            this.nameLabel.width = 120;
-            this.nameLabel.height = 18;
-            this.nameLabel.font = "18px arial, sans-serif";
-            this.nameLabel.color = "black";
-            this.nameLabel.x = this.x + ((this.width - this.nameLabel.width) / 2);
-            this.nameLabel.y = this.y + 70;
-        },
-        
-        onenterframe: function modifyDials() {
-            "use strict";
-            if (this.state === 1) {
-                if ((this.upDial.value + this.upDial.upRate) <= this.upDial.maxValue) {
-                    this.upDial.value += this.upDial.upRate;
-                    // !!! Clean this up! Can be if/else because the enclosing if statement already checks to make sure you don't go over before incrementing.
-                    if ((this.upDial.value > this.upDial.maxValue) || (this.upDial.value < this.upDial.minValue)) {
-                        this.upDial.lost = true;
-                        console.info("Loss due to a dial at maximum value.");
-                    }
-                }
-                if ((this.downDial.value - this.downDial.downRate) >= this.downDial.minValue) {
-                    this.downDial.value -= this.downDial.downRate;
-                    if ((this.downDial.value < this.downDial.minValue) || (this.downDial.value > this.downDial.maxValue)) {
-                        this.downDial.lost = true;
-                        console.info("Loss due to a dial at minimum value.");
-                    }
-                }
-            }
-            this.clock.decrement();
-            this.clock.increment();
-        }
-    }),
     
     megapanel: Class.create(Sprite, {
         initialize: function (name, img, sounds, xCoord, fDial, pDial, gDial) {
@@ -908,11 +826,11 @@ var Scenes = {
             var gonks   = new Indicator.dial("Gonks", images.gonks, sounds.danger,
                                              435, 45, 90, this.machine);
             var frimurderer   = new sp.panel("Frimurderer", images.panel, sounds.panel,
-                                                  0, pazzles, frims);
+                                                  0, {upDial: pazzles, downDial: frims});
             var pazzlepaddler = new sp.panel("Pazzlepaddler", images.panel, sounds.panel,
-                                                    160, gonks, pazzles);
+                                                    160, {upDial: gonks, downDial: pazzles});
             var gonkiller     = new sp.panel("Gonkiller", images.panel, sounds.panel,
-                                                320, frims, gonks);
+                                                320, {upDial: frims, downDial: gonks});
             // !!! var fixitall = new Indicator.megapanel("Fix-It-All", images.megapanel, sounds.megapanel, 480, frims, pazzles, gonks);
             var seconds = new Label();
             var children = [];
