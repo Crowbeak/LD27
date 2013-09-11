@@ -28,26 +28,38 @@ var Constants = {
     red: "#FF0000",
     seconds: 10,
     stageHeight: 480,
-    stageWidth: 640
+    stageWidth: 640,
+    
+    bindKeys: function (game) {
+        // Bind spacebar to 'a' and allow WASD input
+        "use strict";
+        console.info("Binding keys.");
+        game.keybind(32, 'a');
+        game.keybind(65, 'left');
+        game.keybind(68, 'right');
+        game.keybind(87, 'up');
+        game.keybind(83, 'down');
+    }
 };
 if (Object.freeze) { Object.freeze(Constants); }
 
-// Bind spacebar to 'a' and allow WASD input
-function bindKeys(game) {
+
+/**
+ * Namespace for switch panel instantiation.
+ *
+ */
+(function (SwitchPanels) {
     "use strict";
-    console.info("Binding keys.");
-    game.keybind(32, 'a');
-    game.keybind(65, 'left');
-    game.keybind(68, 'right');
-    game.keybind(87, 'up');
-    game.keybind(83, 'down');
-}
-
-
-var Switch = {
-    onOff: Class.create(Label, {
+    /**
+     * On/off switch for a panel.
+     *
+     * Derived from enchant.Label().
+     *
+     * @private
+     * @param {Panel} [panel] The Panel to which the timer is attached.
+     */
+    var Switch = Class.create(Label, {
         initialize: function (panel) {
-            "use strict";
             Label.call(this, "ON");
             console.info("Creating on/off switch.");
             
@@ -68,8 +80,7 @@ var Switch = {
         },
         
         onenterframe: function update() {
-            "use strict";
-            if (this.panel.state === 0) {
+            if (this.panel.isOn === false) {
                 this.backgroundColor = this.offColor;
                 this.text = "OFF";
                 this.color = this.offTextColor;
@@ -79,56 +90,42 @@ var Switch = {
                 this.color = this.onTextColor;
             }
         }
-    }),
+    });
     
-    polystate: Class.create(Label, {
+    /**
+     * Selector switch for a megapanel.
+     *
+     * Derived from enchant.Label().
+     *
+     * @private
+     * @param {Panel} [panel] The Panel to which the timer is attached.
+     */
+    var Selector = Class.create(Label, {
         initialize: function (megapanel) {
-            "use strict";
             Label.call(this, "FRIMS DOWN");
             console.info("Creating polystate switch.");
             
             this.megapanel = megapanel;
-            this.onColor = Constants.blue;
-            this.onTextColor = "black";
-            this.offColor = Constants.red;
-            this.offTextColor = "white";
             this.height = 36;
             this.width = 120;
             this.x = this.megapanel.x + 20;
             this.y = this.megapanel.y + 140;
-            
-            this.text = "OFF";
-            this.backgroundColor = this.offColor;
-            this.color = this.offTextColor;
+            this.backgroundColor = Constants.blue;
+            this.color = "black";
             this.font = "18px arial,sans-serif";
         },
         
+        //TODO: store label text on panel.
         onenterframe: function update() {
-            "use strict";
             if (this.megapanel.selection === 0) {
-                this.backgroundColor = this.onColor;
                 this.text = "FRIMS<br>DECREASING";
-                this.color = this.onTextColor;
             } else if (this.megapanel.selection === 1) {
-                this.backgroundColor = this.onColor;
                 this.text = "PAZZLES<br>DECREASING";
-                this.color = this.onTextColor;
             } else if (this.megapanel.selection === 2) {
-                this.backgroundColor = this.onColor;
                 this.text = "GONKS<br>DECREASING";
-                this.color = this.onTextColor;
             }
         }
-    })
-};
-
-
-/**
- * Namespace for switch panel instantiation.
- *
- */
-(function (SwitchPanels) {
-    "use strict";
+    });
 
     /**
      * Class for display and management of switch panel timers.
@@ -170,7 +167,7 @@ var Switch = {
      *
      */
     Timer.prototype.makeDecrementable = function () {
-        if ((this.panel.state === 1) && (this.panel.timeLeft > 0)) {
+        if ((this.panel.isOn === true) && (this.panel.timeLeft > 0)) {
             this.canDecrement = true;
             console.info("Timer is now decrementable.");
         }
@@ -184,7 +181,7 @@ var Switch = {
      *
      */
     Timer.prototype.makeIncrementable = function () {
-        if ((this.panel.state === 0) && (this.panel.timeLeft < 10)) {
+        if ((this.panel.isOn === false) && (this.panel.timeLeft < 10)) {
             this.canIncrement = true;
             console.info("Timer is now incrementable.");
         }
@@ -209,7 +206,7 @@ var Switch = {
                 console.info("Timer no longer decrementable.");
             }
         } else {
-            this.panel.state = 0;
+            this.panel.isOn = false;
             this.canDecrement = false;
             this.tl.cue({ 20: this.makeIncrementable });
             console.info("Timer turned off automagically.");
@@ -237,6 +234,17 @@ var Switch = {
         }
     };
     
+    var panelName = function (name, panel) {
+        var nameLabel = new Label(name);
+        nameLabel.width = 120;
+        nameLabel.height = 18;
+        nameLabel.font = "18px arial, sans-serif";
+        nameLabel.color = "black";
+        nameLabel.x = panel.x + ((panel.width - nameLabel.width) / 2);
+        nameLabel.y = panel.y + 70;
+        return nameLabel;
+    };
+    
     /**
      * Class for display and management of switch panels.
      *
@@ -253,7 +261,7 @@ var Switch = {
         initialize: function (name, img, sound, xCoord, dials) {
             Sprite.call(this, img.width, img.height);
             
-            this.sound = sound;
+            this.onOffSound = sound;
             this.image = img;
             this.x = xCoord;
             this.y = Constants.panelY;
@@ -261,29 +269,20 @@ var Switch = {
             this.timeLeft = Constants.seconds;
             this.clock = new Timer(this);
             
-            // Two states
-            //  - 0: Off.
-            //  - 1: On.
-            this.state = 0;
+            this.isOn = false;
             
-            this.onSwitch = new Switch.onOff(this);
+            this.onSwitch = new Switch(this);
             this.usable = true;
             
             this.upDial = dials.upDial;
             this.downDial = dials.downDial;
             
             // !!! Create panel label function
-            this.nameLabel = new Label(name);
-            this.nameLabel.width = 120;
-            this.nameLabel.height = 18;
-            this.nameLabel.font = "18px arial, sans-serif";
-            this.nameLabel.color = "black";
-            this.nameLabel.x = this.x + ((this.width - this.nameLabel.width) / 2);
-            this.nameLabel.y = this.y + 70;
+            this.nameLabel = panelName(name, this);
         },
         
         onenterframe: function () {
-            if (this.state === 1) {
+            if (this.isOn === true) {
                 if ((this.upDial.value + this.upDial.upRate) <= this.upDial.maxValue) {
                     this.upDial.value += this.upDial.upRate;
                 } else {
@@ -303,7 +302,7 @@ var Switch = {
     });
     
     /**
-     * Sets panel on/off switch to a usable state..
+     * Sets panel on/off switch to a usable state.
      *
      */
     SwitchPanels.panel.prototype.makeUsable = function () {
@@ -317,16 +316,16 @@ var Switch = {
     */
     SwitchPanels.panel.prototype.use = function () {
         if (this.usable) {
-            if (this.state === 1) {
+            if (this.isOn === true) {
                 this.tl.clear();
-                this.state = 0;
-                this.sound.play();
+                this.isOn = false;
+                this.onOffSound.play();
                 this.clock.canDecrement = false;
                 this.clock.tl.cue({ 20: this.clock.makeIncrementable });
             } else {
                 this.tl.clear();
-                this.state = 1;
-                this.sound.play();
+                this.isOn = true;
+                this.onOffSound.play();
                 this.clock.canDecrement = true;
                 this.clock.canIncrement = false;
             }
@@ -334,6 +333,112 @@ var Switch = {
             this.tl.cue({ 7: this.makeUsable });
         }
     };
+    
+    SwitchPanels.megapanel = Class.create(SwitchPanels.panel, {
+        initialize: function (name, img, sounds, xCoord, dials) {
+            // !!! Sending dials object with no upDial/downDial to SwitchPanels init.
+            SwitchPanels.panel.call(name, img, sounds.onOff, xCoord, dials);
+            
+            var makeSelectable = function () {
+                this.selectable = true;
+            };
+            
+            this.selectSound = sounds.polystate;
+            this.selectable = true;
+            
+            // Three selections
+            //  - 0: Frims decreasing, pazzles and gonks increasing.
+            //  - 1: Pazzles decreasing, frims and gonks increasing.
+            //  - 2: Gonks decreasing, frimz and pazzles increasing.
+            this.selection = 0;
+            
+            this.selector = new Switch.polystate(this);
+            this.select = function selectFunction() {
+                if (this.selectable) {
+                    if (this.selection === 2) {
+                        this.selection = 0;
+                        this.selectSound.play();
+                    } else {
+                        this.selection += 1;
+                        this.selectSound.play();
+                    }
+                    this.selectable = false;
+                    this.tl.clear();
+                    this.tl.cue({ 7: makeSelectable });
+                    this.tl.cue({ 7: this.makeUsable });
+                }
+            };
+            this.use = function useFunction() {
+                if (this.usable) {
+                    if (this.isOn === true) {
+                        this.isOn = false;
+                        this.onOffSound.play();
+                        this.clock.canDecrement = false;
+                    } else {
+                        this.isOn = true;
+                        this.onOffSound.play();
+                        this.clock.canDecrement = true;
+                    }
+                    this.usable = false;
+                    this.tl.clear();
+                    this.tl.cue({ 7: this.makeUsable });
+                    this.tl.cue({ 7 : makeSelectable });
+                }
+            };
+            
+            this.dial1 = dials.dial1; //frims
+            this.dial2 = dials.dial2; //pazzles
+            this.dial3 = dials.dial3; //gonks
+        },
+        
+        onenterframe: function modifyDials() {
+            if (this.state === 1) {
+                if (this.selection === 0) {
+                    if ((this.dial1.value - (1.5 * this.dial1.downRate)) >= this.dial1.minValue) {
+                        this.dial1.value -= (1.5 * this.dial1.downRate);
+                    }
+                    if ((this.dial2.value + this.dial2.upRate) <= this.dial2.maxValue) {
+                        this.dial2.value += this.dial2.upRate;
+                    }
+                    if ((this.dial3.value + this.dial3.upRate) <= this.dial3.maxValue) {
+                        this.dial3.value += this.dial3.upRate;
+                    }
+                }
+                if (this.selection === 1) {
+                    if ((this.dial2.value - (1.5 * this.dial2.downRate)) >= this.dial2.minValue) {
+                        this.dial2.value -= (1.5 * this.dial2.downRate);
+                    }
+                    if ((this.dial1.value + this.dial1.upRate) <= this.dial1.maxValue) {
+                        this.dial1.value += this.dial1.upRate;
+                    }
+                    if ((this.dial3.value + this.dial3.upRate) <= this.dial3.maxValue) {
+                        this.dial3.value += this.dial3.upRate;
+                    }
+                }
+                if (this.selection === 2) {
+                    if ((this.dial3.value - (1.5 * this.dial3.downRate)) >= this.dial3.minValue) {
+                        this.dial3.value -= (1.5 * this.dial3.downRate);
+                    }
+                    if ((this.dial1.value + this.dial1.upRate) <= this.dial1.maxValue) {
+                        this.dial1.value += this.dial1.upRate;
+                    }
+                    if ((this.dial2.value + this.dial2.upRate) <= this.dial2.maxValue) {
+                        this.dial2.value += this.dial2.upRate;
+                    }
+                }
+                
+                if ((this.dial1.value > this.dial1.maxValue) || (this.dial1.value < this.dial1.minValue)) {
+                    this.dial1.lost = true;
+                } else if ((this.dial2.value > this.dial2.maxValue) || (this.dial2.value < this.dial2.minValue)) {
+                    this.dial2.lost = true;
+                } else if ((this.dial3.value > this.dial3.maxValue) || (this.dial3.value < this.dial3.minValue)) {
+                    this.dial3.lost = true;
+                }
+            }
+            this.clock.decrement();
+            this.clock.increment();
+        }
+    });
 }(window.SwitchPanels = window.SwitchPanels || {}));
 
 
@@ -462,141 +567,7 @@ var Indicator = {
                 }
             }
         }
-    })/*,
-    
-    megapanel: Class.create(Sprite, {
-        initialize: function (name, img, sounds, xCoord, fDial, pDial, gDial) {
-            "use strict";
-            Sprite.call(this, img.width, img.height);
-            
-            var makeSelectable = function () {
-                this.selectable = true;
-            };
-            var makeUsable = function () {
-                this.usable = true;
-            };
-            
-            this.onOffSound = sounds.onOff;
-            this.selectSound = sounds.polystate;
-            this.image = img;
-            this.x = xCoord;
-            this.y = 240;
-            this.selectable = true;
-            this.usable = true;
-            
-            this.timeLeft = Constants.seconds;
-            this.clock = new Clock(this);
-            
-            // Two states
-            //  - 0: Off.
-            //  - 1: On.
-            this.state = 0;
-            
-            // Three selections
-            //  - 0: Frims decreasing, pazzles and gonks increasing.
-            //  - 1: Pazzles decreasing, frims and gonks increasing.
-            //  - 2: Gonks decreasing, frimz and pazzles increasing.
-            this.selection = 0;
-            
-            this.actionPoint = this.x + (this.width / 2);
-            this.onSwitch = new Switch.onOff(this);
-            this.selector = new Switch.polystate(this);
-            this.select = function selectFunction() {
-                if (this.selectable) {
-                    if (this.selection === 2) {
-                        this.selection = 0;
-                        this.selectSound.play();
-                    } else {
-                        this.selection += 1;
-                        this.selectSound.play();
-                    }
-                    this.selectable = false;
-                    this.tl.clear();
-                    this.tl.cue({ 7: makeSelectable });
-                    this.tl.cue({ 7: makeUsable });
-                }
-            };
-            this.use = function useFunction() {
-                if (this.usable) {
-                    if (this.state === 1) {
-                        this.state = 0;
-                        this.onOffSound.play();
-                        this.clock.canDecrement = false;
-                    } else {
-                        this.state = 1;
-                        this.onOffSound.play();
-                        this.clock.canDecrement = true;
-                    }
-                    this.usable = false;
-                    this.tl.clear();
-                    this.tl.cue({ 7: makeUsable });
-                    this.tl.cue({ 7 : makeSelectable });
-                }
-            };
-            
-            this.fDial = fDial;
-            this.pDial = pDial;
-            this.gDial = gDial;
-            
-            this.nameLabel = new Label(name);
-            this.nameLabel.width = 120;
-            this.nameLabel.height = 18;
-            this.nameLabel.font = "18px arial, sans-serif";
-            this.nameLabel.color = "black";
-            this.nameLabel.x = this.x + ((this.width - this.nameLabel.width) / 2);
-            this.nameLabel.y = this.y + 70;
-        },
-        
-        onenterframe: function modifyDials() {
-            "use strict";
-            if (this.state === 1) {
-                if (this.selection === 0) {
-                    if ((this.fDial.value - (1.5 * this.fDial.downRate)) >= this.fDial.minValue) {
-                        this.fDial.value -= (1.5 * this.fDial.downRate);
-                    }
-                    if ((this.pDial.value + this.pDial.upRate) <= this.pDial.maxValue) {
-                        this.pDial.value += this.pDial.upRate;
-                    }
-                    if ((this.gDial.value + this.gDial.upRate) <= this.gDial.maxValue) {
-                        this.gDial.value += this.gDial.upRate;
-                    }
-                }
-                if (this.selection === 1) {
-                    if ((this.pDial.value - (1.5 * this.pDial.downRate)) >= this.pDial.minValue) {
-                        this.pDial.value -= (1.5 * this.pDial.downRate);
-                    }
-                    if ((this.fDial.value + this.fDial.upRate) <= this.fDial.maxValue) {
-                        this.fDial.value += this.fDial.upRate;
-                    }
-                    if ((this.gDial.value + this.gDial.upRate) <= this.gDial.maxValue) {
-                        this.gDial.value += this.gDial.upRate;
-                    }
-                }
-                if (this.selection === 2) {
-                    if ((this.gDial.value - (1.5 * this.gDial.downRate)) >= this.gDial.minValue) {
-                        this.gDial.value -= (1.5 * this.gDial.downRate);
-                    }
-                    if ((this.fDial.value + this.fDial.upRate) <= this.fDial.maxValue) {
-                        this.fDial.value += this.fDial.upRate;
-                    }
-                    if ((this.pDial.value + this.pDial.upRate) <= this.pDial.maxValue) {
-                        this.pDial.value += this.pDial.upRate;
-                    }
-                }
-                
-                if ((this.fDial.value > this.fDial.maxValue) || (this.fDial.value < this.fDial.minValue)) {
-                    this.fDial.lost = true;
-                } else if ((this.pDial.value > this.pDial.maxValue) || (this.pDial.value < this.pDial.minValue)) {
-                    this.pDial.lost = true;
-                } else if ((this.gDial.value > this.gDial.maxValue) || (this.gDial.value < this.gDial.minValue)) {
-                    this.gDial.lost = true;
-                }
-            }
-            this.clock.decrement();
-            this.clock.increment();
-        }
     })
-    */
 };
 
 
@@ -831,7 +802,7 @@ var Scenes = {
                                                     160, {upDial: gonks, downDial: pazzles});
             var gonkiller     = new sp.panel("Gonkiller", images.panel, sounds.panel,
                                                 320, {upDial: frims, downDial: gonks});
-            // !!! var fixitall = new Indicator.megapanel("Fix-It-All", images.megapanel, sounds.megapanel, 480, frims, pazzles, gonks);
+            // !!! var fixitall = new sp.megapanel("Fix-It-All", images.megapanel, sounds.megapanel, 480, {dial1: frims, dial2: pazzles, dial3: gonks});
             var seconds = new Label();
             var children = [];
             var i;
@@ -961,7 +932,7 @@ window.onload = function () {
             gameOver: game.assets['sound/exploded.wav']
         };
         
-        bindKeys(game);
+        Constants.bindKeys(game);
         
         var gameOverScene = new Scenes.gameOver(images, game, sounds);
         var factoryScene = new Scenes.factory(images, sounds, game);
