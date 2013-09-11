@@ -336,8 +336,7 @@ if (Object.freeze) { Object.freeze(Constants); }
     
     SwitchPanels.megapanel = Class.create(SwitchPanels.panel, {
         initialize: function (name, img, sounds, xCoord, dials) {
-            // !!! Sending dials object with no upDial/downDial to SwitchPanels init.
-            SwitchPanels.panel.call(name, img, sounds.onOff, xCoord, dials);
+            SwitchPanels.panel.call(this, name, img, sounds.onOff, xCoord, dials);
             
             var makeSelectable = function () {
                 this.selectable = true;
@@ -352,7 +351,7 @@ if (Object.freeze) { Object.freeze(Constants); }
             //  - 2: Gonks decreasing, frimz and pazzles increasing.
             this.selection = 0;
             
-            this.selector = new Switch.polystate(this);
+            this.selector = new Selector(this);
             this.select = function selectFunction() {
                 if (this.selectable) {
                     if (this.selection === 2) {
@@ -386,9 +385,11 @@ if (Object.freeze) { Object.freeze(Constants); }
                 }
             };
             
-            this.dial1 = dials.dial1; //frims
-            this.dial2 = dials.dial2; //pazzles
-            this.dial3 = dials.dial3; //gonks
+            this.dial1 = dials.upDial;      //frims
+            this.dial2 = dials.downDial;    //pazzles
+            this.dial3 = dials.downDial2;   //gonks
+            // !!! Modify onenterframe
+            this.downDial2 = this.dial3;
         },
         
         onenterframe: function modifyDials() {
@@ -802,7 +803,7 @@ var Scenes = {
                                                     160, {upDial: gonks, downDial: pazzles});
             var gonkiller     = new sp.panel("Gonkiller", images.panel, sounds.panel,
                                                 320, {upDial: frims, downDial: gonks});
-            // !!! var fixitall = new sp.megapanel("Fix-It-All", images.megapanel, sounds.megapanel, 480, {dial1: frims, dial2: pazzles, dial3: gonks});
+            var fixitall = new sp.megapanel("Fix-It-All", images.megapanel, sounds.megapanel, 480, {upDial: frims, downDial: pazzles, downDial2: gonks});
             var seconds = new Label();
             var children = [];
             var i;
@@ -811,7 +812,7 @@ var Scenes = {
             this.player.interactables.push(frimurderer);
             this.player.interactables.push(pazzlepaddler);
             this.player.interactables.push(gonkiller);
-            // !!! this.player.interactables.push(fixitall);
+            this.player.interactables.push(fixitall);
             
             this.machine = new Machine(game);
             this.machine.dials.frimDial = frims;
@@ -843,7 +844,7 @@ var Scenes = {
             children.push(frimurderer);
             children.push(pazzlepaddler);
             children.push(gonkiller);
-            // !!! children.push(fixitall);
+            children.push(fixitall);
             children.push(this.player);
             children.push(this.machine);
             children.push(seconds);
