@@ -103,7 +103,7 @@ if (Object.freeze) { Object.freeze(Constants); }
     var Selector = Class.create(Label, {
         initialize: function (megapanel) {
             Label.call(this, "FRIMS DOWN");
-            console.info("Creating polystate switch.");
+            console.info("Creating selector.");
             
             this.megapanel = megapanel;
             this.height = 36;
@@ -317,16 +317,14 @@ if (Object.freeze) { Object.freeze(Constants); }
     */
     SwitchPanels.panel.prototype.use = function panelUse() {
         if (this.usable) {
+            this.tl.clear();
+            this.onOffSound.play();
             if (this.isOn === true) {
-                this.tl.clear();
                 this.isOn = false;
-                this.onOffSound.play();
                 this.clock.canDecrement = false;
                 this.clock.tl.cue({ 20: this.clock.makeIncrementable });
             } else {
-                this.tl.clear();
                 this.isOn = true;
-                this.onOffSound.play();
                 this.clock.canDecrement = true;
                 this.clock.canIncrement = false;
             }
@@ -373,7 +371,7 @@ if (Object.freeze) { Object.freeze(Constants); }
         },
         
         onenterframe: function () {
-            if (this.state === 1) {
+            if (this.isOn === true) {
                 if (this.selection === 0) {
                     this.downDial = this.dial1;
                     this.upDial = this.dial2;
@@ -427,18 +425,20 @@ if (Object.freeze) { Object.freeze(Constants); }
     */
     SwitchPanels.megapanel.prototype.use = function megapanelUse() {
         if (this.usable) {
+            this.tl.clear();
+            this.onOffSound.play();
             if (this.isOn === true) {
                 this.isOn = false;
-                this.onOffSound.play();
                 this.clock.canDecrement = false;
+                this.clock.tl.cue({ 20: this.clock.makeIncrementable });
             } else {
                 this.isOn = true;
-                this.onOffSound.play();
                 this.clock.canDecrement = true;
+                this.clock.canIncrement = false;
             }
             this.usable = false;
-            this.tl.clear();
             this.tl.cue({ 7: this.makeUsable });
+            // tl.clear() clears all Timeline events. Next line necessary.
             this.tl.cue({ 7: this.makeSelectable });
         }
     };
@@ -450,16 +450,16 @@ if (Object.freeze) { Object.freeze(Constants); }
     */
     SwitchPanels.megapanel.prototype.select = function () {
         if (this.selectable) {
+            this.tl.clear();
+            this.selectSound.play();
             if (this.selection === 2) {
                 this.selection = 0;
-                this.selectSound.play();
             } else {
                 this.selection += 1;
-                this.selectSound.play();
             }
             this.selectable = false;
-            this.tl.clear();
             this.tl.cue({ 7: this.makeSelectable });
+            // tl.clear() clears all Timeline events. Next line necessary.
             this.tl.cue({ 7: this.makeUsable });
         }
     };
@@ -654,33 +654,29 @@ var Machine = Class.create(Label, {
         
         this.visible = false;
         
-        this.dials = {
-            frimDial: {},
-            pazzleDial: {},
-            gonkDial: {}
-        };
+        this.dials = {};
         
         this.baseRate = Constants.baseRate;
-        this.frimRate = this.baseRate;
-        this.pazzleRate = this.baseRate;
-        this.gonkRate = this.baseRate;
+        this.dial1Rate = this.baseRate;
+        this.dial2Rate = this.baseRate;
+        this.dial3Rate = this.baseRate;
         
         this.exploding = false;
         
         this.addEventListener(Event.ENTER_FRAME, function () {
-            this.dials.frimDial.value += this.frimRate;
-            this.dials.pazzleDial.value += this.pazzleRate;
-            this.dials.gonkDial.value += this.gonkRate;
+            this.dials.dial1.value += this.dial1Rate;
+            this.dials.dial2.value += this.dial2Rate;
+            this.dials.dial3.value += this.dial3Rate;
             
-            if ((this.dials.frimDial.value > this.dials.frimDial.maxValue) || (this.dials.frimDial.value < this.dials.frimDial.minValue)) {
-                this.dials.frimDial.lost = true;
-            } else if ((this.dials.pazzleDial.value > this.dials.pazzleDial.maxValue) || (this.dials.pazzleDial.value < this.dials.pazzleDial.minValue)) {
-                this.dials.pazzleDial.lost = true;
-            } else if ((this.dials.gonkDial.value > this.dials.gonkDial.maxValue) || (this.dials.gonkDial.value < this.dials.gonkDial.minValue)) {
-                this.dials.gonkDial.lost = true;
+            if ((this.dials.dial1.value > this.dials.dial1.maxValue) || (this.dials.dial1.value < this.dials.dial1.minValue)) {
+                this.dials.dial1.lost = true;
+            } else if ((this.dials.dial2.value > this.dials.dial2.maxValue) || (this.dials.dial2.value < this.dials.dial2.minValue)) {
+                this.dials.dial2.lost = true;
+            } else if ((this.dials.dial3.value > this.dials.dial3.maxValue) || (this.dials.dial3.value < this.dials.dial3.minValue)) {
+                this.dials.dial3.lost = true;
             }
             
-            if ((this.dials.frimDial.lost === true) || (this.dials.pazzleDial.lost === true) || (this.dials.gonkDial.lost === true)) {
+            if ((this.dials.dial1.lost === true) || (this.dials.dial2.lost === true) || (this.dials.dial3.lost === true)) {
                 this.exploding = true;
                 console.info("Kersplode!");
             }
@@ -810,6 +806,7 @@ var Scenes = {
             "use strict";
             console.info("Creating factory scene.");
             Scene.call(this);
+            
             var sp = window.SwitchPanels;
             this.game = game;
             this.gameOverSound = sounds.gameOver;
@@ -839,9 +836,9 @@ var Scenes = {
             this.player.interactables.push(fixitall);
             
             this.machine = new Machine(game);
-            this.machine.dials.frimDial = frims;
-            this.machine.dials.pazzleDial = pazzles;
-            this.machine.dials.gonkDial = gonks;
+            this.machine.dials.dial1 = frims;
+            this.machine.dials.dial2 = pazzles;
+            this.machine.dials.dial3 = gonks;
             
             seconds.x = 10;
             seconds.y = 10;
