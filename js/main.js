@@ -248,14 +248,17 @@ if (Object.freeze) { Object.freeze(Constants); }
     /**
      * Class for display and management of switch panels.
      *
-     * Derived from enchant.Sprite().
+     * A switch panel is used to modify the output of two dials -- one
+     * dial goes up, one goes down.
+     * Derived from enchant.Sprite.
      *
      * @param {String} [name] Name of the panel to be displayed.
      * @param {Image} [img] Preloaded image asset to be used for the panel.
      * @param {Sound} [sound] Preloaded sound asset to be used for the on/off switch.
      * @param {Number} [xCoord] x-coordinate where the panel will be placed.
-     * @param {Dial} [upDial] Dial to be increased when this panel is switched on.
-     * @param {Dial} [downDial] Dial to be decreased when this panel is switched on.
+     * @param {Object} [dials] Object containing references to the dials
+     * to be modified when the panel is turned on.
+     * [dials] must have [downDial] and [upDial] fields.
      */
     SwitchPanels.panel = Class.create(Sprite, {
         initialize: function (name, img, sound, xCoord, dials) {
@@ -270,14 +273,12 @@ if (Object.freeze) { Object.freeze(Constants); }
             this.clock = new Timer(this);
             
             this.isOn = false;
-            
             this.onSwitch = new Switch(this);
             this.usable = true;
             
             this.upDial = dials.upDial;
             this.downDial = dials.downDial;
             
-            // !!! Create panel label function
             this.nameLabel = panelName(name, this);
         },
         
@@ -314,7 +315,7 @@ if (Object.freeze) { Object.freeze(Constants); }
     * 
     * If the panel is off, it will turn on, or vice-versa.
     */
-    SwitchPanels.panel.prototype.use = function () {
+    SwitchPanels.panel.prototype.use = function panelUse() {
         if (this.usable) {
             if (this.isOn === true) {
                 this.tl.clear();
@@ -334,112 +335,134 @@ if (Object.freeze) { Object.freeze(Constants); }
         }
     };
     
+    /**
+     * Class for display and management of megapanels.
+     *
+     * Derived from SwitchPanels.panel, this is a switch panel which
+     * makes one dial go up and two go down.
+     *
+     * @param {String} [name] Name of the panel to be displayed.
+     * @param {Image} [img] Preloaded image asset to be used for the panel.
+     * @param {Object} [sounds] Object containing references to preloaded
+     * sound assets to be used for the on/off switch and selector.
+     * [sounds] must have [onOff] and [selector] fields.
+     * @param {Number} [xCoord] x-coordinate where the panel will be placed.
+     * @param {Object} [dials] Object containing references to the dials
+     * to be modified when the panel is turned on.
+     * [dials] must have [upDial], [downDial], and [upDial2] fields.
+     */
     SwitchPanels.megapanel = Class.create(SwitchPanels.panel, {
         initialize: function (name, img, sounds, xCoord, dials) {
             SwitchPanels.panel.call(this, name, img, sounds.onOff, xCoord, dials);
             
-            var makeSelectable = function () {
-                this.selectable = true;
-            };
+            this.dial1 = dials.downDial;      //frims
+            this.dial2 = dials.upDial;    //pazzles
+            this.dial3 = dials.upDial2;   //gonks
+            this.upDial2 = this.dial3;
+            this.modifier = 1.5;
             
-            this.selectSound = sounds.polystate;
+            this.selectSound = sounds.selector;
             this.selectable = true;
             
-            // Three selections
-            //  - 0: Frims decreasing, pazzles and gonks increasing.
-            //  - 1: Pazzles decreasing, frims and gonks increasing.
-            //  - 2: Gonks decreasing, frimz and pazzles increasing.
+            // Three possible selections:
+            //  - 0: dial1 decreasing, dial2 and dial3 increasing.
+            //  - 1: dial2 decreasing, dial1 and dial3 increasing.
+            //  - 2: dial3 decreasing, dial1 and dial2 increasing.
             this.selection = 0;
-            
             this.selector = new Selector(this);
-            this.select = function selectFunction() {
-                if (this.selectable) {
-                    if (this.selection === 2) {
-                        this.selection = 0;
-                        this.selectSound.play();
-                    } else {
-                        this.selection += 1;
-                        this.selectSound.play();
-                    }
-                    this.selectable = false;
-                    this.tl.clear();
-                    this.tl.cue({ 7: makeSelectable });
-                    this.tl.cue({ 7: this.makeUsable });
-                }
-            };
-            this.use = function useFunction() {
-                if (this.usable) {
-                    if (this.isOn === true) {
-                        this.isOn = false;
-                        this.onOffSound.play();
-                        this.clock.canDecrement = false;
-                    } else {
-                        this.isOn = true;
-                        this.onOffSound.play();
-                        this.clock.canDecrement = true;
-                    }
-                    this.usable = false;
-                    this.tl.clear();
-                    this.tl.cue({ 7: this.makeUsable });
-                    this.tl.cue({ 7 : makeSelectable });
-                }
-            };
-            
-            this.dial1 = dials.upDial;      //frims
-            this.dial2 = dials.downDial;    //pazzles
-            this.dial3 = dials.downDial2;   //gonks
-            // !!! Modify onenterframe
-            this.downDial2 = this.dial3;
         },
         
-        onenterframe: function modifyDials() {
+        onenterframe: function () {
             if (this.state === 1) {
                 if (this.selection === 0) {
-                    if ((this.dial1.value - (1.5 * this.dial1.downRate)) >= this.dial1.minValue) {
-                        this.dial1.value -= (1.5 * this.dial1.downRate);
-                    }
-                    if ((this.dial2.value + this.dial2.upRate) <= this.dial2.maxValue) {
-                        this.dial2.value += this.dial2.upRate;
-                    }
-                    if ((this.dial3.value + this.dial3.upRate) <= this.dial3.maxValue) {
-                        this.dial3.value += this.dial3.upRate;
-                    }
-                }
-                if (this.selection === 1) {
-                    if ((this.dial2.value - (1.5 * this.dial2.downRate)) >= this.dial2.minValue) {
-                        this.dial2.value -= (1.5 * this.dial2.downRate);
-                    }
-                    if ((this.dial1.value + this.dial1.upRate) <= this.dial1.maxValue) {
-                        this.dial1.value += this.dial1.upRate;
-                    }
-                    if ((this.dial3.value + this.dial3.upRate) <= this.dial3.maxValue) {
-                        this.dial3.value += this.dial3.upRate;
-                    }
-                }
-                if (this.selection === 2) {
-                    if ((this.dial3.value - (1.5 * this.dial3.downRate)) >= this.dial3.minValue) {
-                        this.dial3.value -= (1.5 * this.dial3.downRate);
-                    }
-                    if ((this.dial1.value + this.dial1.upRate) <= this.dial1.maxValue) {
-                        this.dial1.value += this.dial1.upRate;
-                    }
-                    if ((this.dial2.value + this.dial2.upRate) <= this.dial2.maxValue) {
-                        this.dial2.value += this.dial2.upRate;
-                    }
+                    this.downDial = this.dial1;
+                    this.upDial = this.dial2;
+                    this.upDial2 = this.dial3;
+                } else if (this.selection === 1) {
+                    this.downDial = this.dial2;
+                    this.upDial = this.dial1;
+                    this.upDial2 = this.dial3;
+                } else if (this.selection === 2) {
+                    this.downDial = this.dial3;
+                    this.upDial = this.dial1;
+                    this.upDial2 = this.dial2;
                 }
                 
-                if ((this.dial1.value > this.dial1.maxValue) || (this.dial1.value < this.dial1.minValue)) {
-                    this.dial1.lost = true;
-                } else if ((this.dial2.value > this.dial2.maxValue) || (this.dial2.value < this.dial2.minValue)) {
-                    this.dial2.lost = true;
-                } else if ((this.dial3.value > this.dial3.maxValue) || (this.dial3.value < this.dial3.minValue)) {
-                    this.dial3.lost = true;
+                if ((this.downDial.value - (this.modifier * this.downDial.downRate)) >= this.downDial.minValue) {
+                    this.downDial.value -= (this.modifier * this.downDial.downRate);
+                } else {
+                    this.downDial.lost = true;
+                    console.info("Loss due to a dial at minimum value.");
+                }
+                if ((this.upDial.value + this.upDial.upRate) <= this.upDial.maxValue) {
+                    this.upDial.value += this.upDial.upRate;
+                } else {
+                    this.upDial.lost = true;
+                    console.info("Loss due to a dial at maximum value.");
+                }
+                if ((this.upDial2.value + this.upDial2.upRate) <= this.upDial2.maxValue) {
+                    this.upDial2.value += this.upDial2.upRate;
+                } else {
+                    this.upDial2.lost = true;
+                    console.info("Loss due to a dial at maximum value.");
                 }
             }
             this.clock.decrement();
             this.clock.increment();
         }
     });
+    
+    /**
+     * Sets the megapanel's selector switch to a usable state.
+     *
+     */
+    SwitchPanels.megapanel.prototype.makeSelectable = function () {
+        this.selectable = true;
+    };
+    
+    /**
+    * Uses the megapanel.
+    * 
+    * If the megapanel is off, it will turn on, or vice-versa.
+    */
+    SwitchPanels.megapanel.prototype.use = function megapanelUse() {
+        if (this.usable) {
+            if (this.isOn === true) {
+                this.isOn = false;
+                this.onOffSound.play();
+                this.clock.canDecrement = false;
+            } else {
+                this.isOn = true;
+                this.onOffSound.play();
+                this.clock.canDecrement = true;
+            }
+            this.usable = false;
+            this.tl.clear();
+            this.tl.cue({ 7: this.makeUsable });
+            this.tl.cue({ 7: this.makeSelectable });
+        }
+    };
+    
+    /**
+    * Changes megapanel options via a selector.
+    * 
+    * If the panel is off, it will turn on, or vice-versa.
+    */
+    SwitchPanels.megapanel.prototype.select = function () {
+        if (this.selectable) {
+            if (this.selection === 2) {
+                this.selection = 0;
+                this.selectSound.play();
+            } else {
+                this.selection += 1;
+                this.selectSound.play();
+            }
+            this.selectable = false;
+            this.tl.clear();
+            this.tl.cue({ 7: this.makeSelectable });
+            this.tl.cue({ 7: this.makeUsable });
+        }
+    };
 }(window.SwitchPanels = window.SwitchPanels || {}));
 
 
@@ -803,7 +826,8 @@ var Scenes = {
                                                     160, {upDial: gonks, downDial: pazzles});
             var gonkiller     = new sp.panel("Gonkiller", images.panel, sounds.panel,
                                                 320, {upDial: frims, downDial: gonks});
-            var fixitall = new sp.megapanel("Fix-It-All", images.megapanel, sounds.megapanel, 480, {upDial: frims, downDial: pazzles, downDial2: gonks});
+            var fixitall = new sp.megapanel("Fix-It-All", images.megapanel, sounds.megapanel, 480,
+                                            {downDial: frims, upDial: pazzles, upDial2: gonks});
             var seconds = new Label();
             var children = [];
             var i;
@@ -855,9 +879,10 @@ var Scenes = {
                 if (children[i].clock) {
                     this.addChild(children[i].clock);
                     this.addChild(children[i].onSwitch);
-                }
-                if (children[i].selector) {
-                    this.addChild(children[i].selector);
+                    this.addChild(children[i].nameLabel);
+                    if (children[i].selector) {
+                        this.addChild(children[i].selector);
+                    }
                 }
                 if (children[i].safe) {
                     this.addChild(children[i].safe);
@@ -866,8 +891,6 @@ var Scenes = {
                     this.addChild(children[i].safeZone);
                     this.addChild(children[i].highZone);
                     this.addChild(children[i].needle);
-                }
-                if (children[i].nameLabel) {
                     this.addChild(children[i].nameLabel);
                 }
                 if (children[i].explosion) {
@@ -928,7 +951,7 @@ window.onload = function () {
             panel: game.assets['sound/gerk.wav'],
             megapanel: {
                 onOff: game.assets['sound/gerk.wav'],
-                polystate: game.assets['sound/bork.wav']
+                selector: game.assets['sound/bork.wav']
             },
             gameOver: game.assets['sound/exploded.wav']
         };
