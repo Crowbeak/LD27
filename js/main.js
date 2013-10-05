@@ -353,9 +353,9 @@ if (Object.freeze) { Object.freeze(Constants); }
         initialize: function (name, img, sounds, xCoord, dials) {
             SwitchPanels.panel.call(this, name, img, sounds.onOff, xCoord, dials);
             
-            this.dial1 = dials.downDial;      //frims
-            this.dial2 = dials.upDial;    //pazzles
-            this.dial3 = dials.upDial2;   //gonks
+            this.dial1 = dials.downDial;    //frims
+            this.dial2 = dials.upDial;      //pazzles
+            this.dial3 = dials.upDial2;     //gonks
             this.upDial2 = this.dial3;
             this.modifier = 1.5;
             
