@@ -24,7 +24,7 @@
                 Scene,
                 Sprite,
                 Surface,
-            Observers */
+            Observer */
 
 
 var Warning = {
