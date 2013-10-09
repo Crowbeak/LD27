@@ -4,6 +4,8 @@
 // A game in which one must keep the machines from exploding by managing
 // gauge outputs.
 
+//TODO: Check for clock cue clearing.
+//TODO: Create wrapper for clock queuing/unqueueing.
 
 // This file contains the SwitchPanels namespace.
 // It must be loaded after constants.js and before main.js.
@@ -250,7 +252,7 @@
             
             this.isOn = false;
             this.onSwitch = new Switch(this);
-            this.usable = true;
+            this.isUsable = true;
             
             this.upDial = dials.upDial;
             this.downDial = dials.downDial;
@@ -282,30 +284,54 @@
      * Sets panel on/off switch to a usable state.
      *
      */
-    SwitchPanels.panel.prototype.makeUsable = function () {
-        this.usable = true;
+    SwitchPanels.panel.prototype.makeUsable = function makePanelUsable() {
+        this.isUsable = true;
     };
     
     /**
-    * Uses the panel.
-    * 
-    * If the panel is off, it will turn on, or vice-versa.
-    */
-    SwitchPanels.panel.prototype.use = function panelUse() {
-        if (this.usable) {
+     * Sets panel on/off switch to an unusuable state.
+     *
+     */
+    SwitchPanels.panel.prototype.makeUnusable = function makePanelUnusable() {
+        this.isUsable = false;
+        this.tl.cue({ 7: this.makeUsable });
+    };
+    
+    /**
+     * Turns the panel off.
+     *
+     */
+    SwitchPanels.panel.prototype.turnOff = function turnPanelOff() {
+        this.isOn = false;
+        this.clock.canDecrement = false;
+        this.clock.tl.cue({ 20: this.clock.makeIncrementable });
+    };
+    
+    /**
+     * Turns the panel onn.
+     *
+     */
+    SwitchPanels.panel.prototype.turnOn = function turnPanelOn() {
+        this.isOn = true;
+        this.clock.canDecrement = true;
+        this.clock.canIncrement = false;
+    };
+    
+    /**
+     * Updates the panel state.
+     *
+     * If the panel is off, it will turn on, or vice-versa.
+     */
+    SwitchPanels.panel.prototype.update = function (updateData) {
+        if ((updateData.onOff === true) && updateData.player.intersect(this.onSwitch) && this.isUsable) {
             this.tl.clear();
             this.onOffSound.play();
             if (this.isOn === true) {
-                this.isOn = false;
-                this.clock.canDecrement = false;
-                this.clock.tl.cue({ 20: this.clock.makeIncrementable });
+                this.turnOff();
             } else {
-                this.isOn = true;
-                this.clock.canDecrement = true;
-                this.clock.canIncrement = false;
+                this.turnOn();
             }
-            this.usable = false;
-            this.tl.cue({ 7: this.makeUsable });
+            this.makeUnusable();
         }
     };
     
@@ -395,12 +421,12 @@
     };
     
     /**
-    * Uses the megapanel.
+    * Updates the megapanel state.
     * 
     * If the megapanel is off, it will turn on, or vice-versa.
     */
-    SwitchPanels.megapanel.prototype.use = function megapanelUse() {
-        if (this.usable) {
+    SwitchPanels.megapanel.prototype.update = function megapanelUpdate() {
+        if (this.isUsable) {
             this.tl.clear();
             this.onOffSound.play();
             if (this.isOn === true) {
@@ -412,7 +438,7 @@
                 this.clock.canDecrement = true;
                 this.clock.canIncrement = false;
             }
-            this.usable = false;
+            this.isUsable = false;
             this.tl.cue({ 7: this.makeUsable });
             // tl.clear() clears all Timeline events. Next line necessary.
             this.tl.cue({ 7: this.makeSelectable });
