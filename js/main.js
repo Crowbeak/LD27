@@ -172,6 +172,11 @@ var Player = Class.create(Sprite, {
         this.observers = [];
         this.addEventListener(Event.ENTER_FRAME, function () {
             var i;
+            var updateData = {
+                onOff: false,
+                selector: false,
+                player: this
+            };
             if (this.game.input.left && !this.game.input.right) {
                 console.info("Player moving left.");
                 this.frame = 0;
@@ -185,21 +190,18 @@ var Player = Class.create(Sprite, {
                     this.x += Constants.playerSpeed;
                 }
             }
-            if (this.game.input.up && !this.game.input.down) {
-                console.log("Player input up.");
-                for (i = 0; i < this.observers.length; i++) {
-                    if (this.intersect(this.observers[i].onSwitch)) {
-                        this.observers[i].use();
-                        this.frame = 2;
-                    }
+            if (this.game.input.up || this.game.input.down) {
+                if (this.game.input.up) {
+                    console.log("Player input up.");
+                    updateData.onOff = true;
+                } else if (this.game.input.down) {
+                    console.info("Player input down.");
+                    updateData.selector = true;
                 }
-            } else if (this.game.input.down && !this.game.input.up) {
-                console.info("Player input down.");
+                
                 for (i = 0; i < this.observers.length; i++) {
-                    if (this.intersect(this.observers[i].selector)) {
-                        this.observers[i].select();
-                        this.frame = 2;
-                    }
+                    this.observers[i].update(updateData);
+                    this.frame = 2;
                 }
             }
         });
