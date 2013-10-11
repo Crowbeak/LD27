@@ -246,11 +246,11 @@ var Scenes = {
             this.game = game;
             this.gameOverSound = sounds.gameOver;
             
-            var frims   = new Gauges.Indicator.gauge("Frims", images.frims, sounds.danger,
+            var frims   = new Gauges.Gauge("Frims", images.frims, sounds.danger,
                                              25, 25, 85, this.machine);
-            var pazzles = new Gauges.Indicator.gauge("Pazzles", images.pazzles, sounds.danger,
+            var pazzles = new Gauges.Gauge("Pazzles", images.pazzles, sounds.danger,
                                              230, 10, 70, this.machine);
-            var gonks   = new Gauges.Indicator.gauge("Gonks", images.gonks, sounds.danger,
+            var gonks   = new Gauges.Gauge("Gonks", images.gonks, sounds.danger,
                                              435, 45, 90, this.machine);
             var frimurderer   = new sp.panel("Frimurderer", images.panel, sounds.panel,
                                                   0, {upGauge: pazzles, downGauge: frims});
@@ -319,9 +319,9 @@ var Scenes = {
                 if (children[i].safe) {
                     this.addChild(children[i].safe);
                     this.addChild(children[i].danger);
-                    this.addChild(children[i].lowZone);
-                    this.addChild(children[i].safeZone);
                     this.addChild(children[i].highZone);
+                    this.addChild(children[i].safeZone);
+                    this.addChild(children[i].lowZone);
                     this.addChild(children[i].needle);
                     this.addChild(children[i].nameLabel);
                 }

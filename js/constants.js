@@ -30,6 +30,10 @@ var Constants = {
     seconds: 10,
     stageHeight: 480,
     stageWidth: 640,
+    zoneBarHeight: 10,
+    zoneHigh: "high",
+    zoneLow: "low",
+    zoneSafe: "safe",
     
     bindKeys: function (game) {
         // Bind spacebar to 'a' and allow WASD input
