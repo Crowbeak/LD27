@@ -46,29 +46,26 @@
             this.onTextColor = "black";
             this.offColor = Constants.red;
             this.offTextColor = "white";
+            this.font = "20px arial,sans-serif";
+            
             this.height = 20;
             this.width = 60;
             this.x = this.panel.x + 30;
             this.y = this.panel.y + 110;
-            
-            this.text = "OFF";
-            this.backgroundColor = this.offColor;
-            this.color = this.offTextColor;
-            this.font = "20px arial,sans-serif";
-        },
-        
-        onenterframe: function update() {
-            if (this.panel.isOn === false) {
-                this.backgroundColor = this.offColor;
-                this.text = "OFF";
-                this.color = this.offTextColor;
-            } else {
-                this.backgroundColor = this.onColor;
-                this.text = "ON";
-                this.color = this.onTextColor;
-            }
         }
     });
+    
+    Switch.prototype.turnOff = function turnSwitchOff() {
+        this.backgroundColor = this.offColor;
+        this.text = "OFF";
+        this.color = this.offTextColor;
+    };
+    
+    Switch.prototype.turnOn = function turnSwitchOn() {
+        this.backgroundColor = this.onColor;
+        this.text = "ON";
+        this.color = this.onTextColor;
+    };
     
     /**
      * Selector switch for a megapanel.
@@ -252,6 +249,7 @@
             
             this.isOn = false;
             this.onSwitch = new Switch(this);
+            this.onSwitch.turnOff();
             this.isUsable = true;
             
             this.upDial = dials.upDial;
@@ -303,6 +301,7 @@
      */
     SwitchPanels.panel.prototype.turnOff = function turnPanelOff() {
         this.isOn = false;
+        this.onSwitch.turnOff();
         this.clock.canDecrement = false;
         this.clock.tl.cue({ 20: this.clock.makeIncrementable });
     };
@@ -313,6 +312,7 @@
      */
     SwitchPanels.panel.prototype.turnOn = function turnPanelOn() {
         this.isOn = true;
+        this.onSwitch.turnOn();
         this.clock.canDecrement = true;
         this.clock.canIncrement = false;
     };
