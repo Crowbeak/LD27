@@ -121,9 +121,6 @@
      */
     var Timer = Class.create(Label, {
         initialize: function (panel) {
-            // !!! if ((this instanceof Timer) === false) {
-            //    return new Timer();
-            //}
             Label.call(this);
             console.info("Creating timer.");
             

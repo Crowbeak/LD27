@@ -24,6 +24,7 @@
                 Scene,
                 Sprite,
                 Surface,
+            Gauges,
             Observer */
 
 
@@ -245,11 +246,11 @@ var Scenes = {
             this.game = game;
             this.gameOverSound = sounds.gameOver;
             
-            var frims   = new Indicator.gauge("Frims", images.frims, sounds.danger,
+            var frims   = new Gauges.Indicator.gauge("Frims", images.frims, sounds.danger,
                                              25, 25, 85, this.machine);
-            var pazzles = new Indicator.gauge("Pazzles", images.pazzles, sounds.danger,
+            var pazzles = new Gauges.Indicator.gauge("Pazzles", images.pazzles, sounds.danger,
                                              230, 10, 70, this.machine);
-            var gonks   = new Indicator.gauge("Gonks", images.gonks, sounds.danger,
+            var gonks   = new Gauges.Indicator.gauge("Gonks", images.gonks, sounds.danger,
                                              435, 45, 90, this.machine);
             var frimurderer   = new sp.panel("Frimurderer", images.panel, sounds.panel,
                                                   0, {upGauge: pazzles, downGauge: frims});
