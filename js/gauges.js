@@ -30,14 +30,14 @@
 
 var Warning = {
     danger: Class.create(Sprite, {
-        initialize: function (img, dial, sound) {
+        initialize: function (img, gauge, sound) {
             "use strict";
             Sprite.call(this, img.width, img.height);
             
-            this.dial = dial;
+            this.gauge = gauge;
             this.image = img;
-            this.x = this.dial.x + (this.dial.width / 2) - (this.width / 2);
-            this.y = this.dial.y - this.height - 16;
+            this.x = this.gauge.x + (this.gauge.width / 2) - (this.width / 2);
+            this.y = this.gauge.y - this.height - 16;
             this.visible = false;
             this.sound = sound;
             this.canBuzz = true;
@@ -45,7 +45,7 @@ var Warning = {
         
         onenterframe: function updateWarning() {
             "use strict";
-            if ((this.dial.value < this.dial.minSafe) || (this.dial.value > this.dial.maxSafe)) {
+            if ((this.gauge.value < this.gauge.minSafe) || (this.gauge.value > this.gauge.maxSafe)) {
                 this.visible = true;
                 if (this.canBuzz) {
                     this.sound.play();
@@ -61,28 +61,28 @@ var Warning = {
     }),
     
     safe: Class.create(Sprite, {
-        initialize: function (img, dial) {
+        initialize: function (img, gauge) {
             "use strict";
             Sprite.call(this, img.width, img.height);
             
-            this.dial = dial;
+            this.gauge = gauge;
             this.image = img;
-            this.x = this.dial.x + (this.dial.width / 2) - (this.width / 2);
-            this.y = this.dial.y - this.height - 16;
+            this.x = this.gauge.x + (this.gauge.width / 2) - (this.width / 2);
+            this.y = this.gauge.y - this.height - 16;
         }
     })
 };
 
 
 var Indicator = {
-    dial: Class.create(Sprite, {
+    gauge: Class.create(Sprite, {
         initialize: function (name, images, sound, xCoord, minSafe, maxSafe, machine) {
             "use strict";
-            Sprite.call(this, images.dial.width, images.dial.height);
+            Sprite.call(this, images.gauge.width, images.gauge.height);
             
             var barHeight = 10;
             
-            this.image = images.dial;
+            this.image = images.gauge;
             this.x = xCoord;
             this.y = 220 - this.height - 30;
             this.lost = false;
