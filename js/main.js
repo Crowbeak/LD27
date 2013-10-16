@@ -24,136 +24,8 @@
                 Scene,
                 Sprite,
                 Surface,
+            Gauges,
             Observer */
-
-
-var Warning = {
-    danger: Class.create(Sprite, {
-        initialize: function (img, dial, sound) {
-            "use strict";
-            Sprite.call(this, img.width, img.height);
-            
-            this.dial = dial;
-            this.image = img;
-            this.x = this.dial.x + (this.dial.width / 2) - (this.width / 2);
-            this.y = this.dial.y - this.height - 16;
-            this.visible = false;
-            this.sound = sound;
-            this.canBuzz = true;
-        },
-        
-        onenterframe: function updateWarning() {
-            "use strict";
-            if ((this.dial.value < this.dial.minSafe) || (this.dial.value > this.dial.maxSafe)) {
-                this.visible = true;
-                if (this.canBuzz) {
-                    this.sound.play();
-                    this.canBuzz = false;
-                }
-            } else {
-                this.visible = false;
-                if (!this.canBuzz) {
-                    this.canBuzz = true;
-                }
-            }
-        }
-    }),
-    
-    safe: Class.create(Sprite, {
-        initialize: function (img, dial) {
-            "use strict";
-            Sprite.call(this, img.width, img.height);
-            
-            this.dial = dial;
-            this.image = img;
-            this.x = this.dial.x + (this.dial.width / 2) - (this.width / 2);
-            this.y = this.dial.y - this.height - 16;
-        }
-    })
-};
-
-
-var Indicator = {
-    dial: Class.create(Sprite, {
-        initialize: function (name, images, sound, xCoord, minSafe, maxSafe, machine) {
-            "use strict";
-            Sprite.call(this, images.dial.width, images.dial.height);
-            
-            var barHeight = 10;
-            
-            this.image = images.dial;
-            this.x = xCoord;
-            this.y = 220 - this.height - 30;
-            this.lost = false;
-            this.machine = machine;
-            
-            this.minValue = 0;
-            this.maxValue = 100;
-            this.minSafe = minSafe;
-            this.maxSafe = maxSafe;
-            this.value = ((this.maxSafe - this.minSafe) / 2) + this.minSafe;
-            this.upBase = Constants.baseRate;
-            this.upRate = this.upBase;
-            this.downBase = 2 * Constants.baseRate;
-            this.downRate = this.downBase;
-            
-            this.barRatio = (this.width - 10) / this.maxValue;
-            this.lowZone = new Label();
-            this.lowZone.height = barHeight;
-            this.lowZone.width = this.minSafe * this.barRatio;
-            this.lowZone.backgroundColor = Constants.red;
-            this.lowZone.x = this.x + 5;
-            this.lowZone.y = this.y + 5;
-            
-            this.safeZone = new Label();
-            this.safeZone.height = barHeight;
-            this.safeZone.width = (this.maxSafe - this.minSafe) * this.barRatio;
-            this.safeZone.backgroundColor = Constants.blue;
-            this.safeZone.x = this.lowZone.x + this.lowZone.width;
-            this.safeZone.y = this.y + 5;
-            
-            this.highZone = new Label();
-            this.highZone.height = barHeight;
-            this.highZone.width = (this.maxValue - this.maxSafe) * this.barRatio;
-            this.highZone.backgroundColor = Constants.red;
-            this.highZone.x = this.safeZone.x + this.safeZone.width;
-            this.highZone.y = this.safeZone.y;
-            
-            this.needle = new Label();
-            this.needle.height = this.height;
-            this.needle.width = 3;
-            this.needle.backgroundColor = "black";
-            this.needle.x = this.lowZone.x + (this.value * this.barRatio) - 1;
-            this.needle.y = this.y;
-            this.needle.maxX = this.highZone.x + this.highZone.width - 2;
-            this.needle.minX = this.lowZone.x;
-            
-            this.danger = new Warning.danger(images.warning, this, sound);
-            this.safe = new Warning.safe(images.safe, this);
-            
-            this.nameLabel = new Label(name);
-            this.nameLabel.width = 80;
-            this.nameLabel.height = 20;
-            this.nameLabel.backgroundColor = Constants.gray;
-            this.nameLabel.font = "20px arial, sans-serif";
-            this.nameLabel.color = "white";
-            this.nameLabel.x = this.x + ((this.width - this.nameLabel.width) / 2);
-            this.nameLabel.y = this.y + this.height + 10;
-        },
-        
-        onenterframe: function () {
-            "use strict";
-            if ((this.value > this.maxValue) || (this.value < this.minValue)) {
-                this.lost = true;
-            } else {
-                var testNeedleX = this.lowZone.x + (this.value * this.barRatio) - 1;
-                if ((this.needle.minX < testNeedleX) && (testNeedleX < this.needle.maxX)) {
-                    this.needle.x = testNeedleX;
-                }
-            }
-        }
-    })
-};
 
 
 var Player = Class.create(Sprite, {
@@ -217,29 +89,29 @@ var Machine = Class.create(Label, {
         
         this.visible = false;
         
-        this.dials = {};
+        this.gauges = {};
         
         this.baseRate = Constants.baseRate;
-        this.dial1Rate = this.baseRate;
-        this.dial2Rate = this.baseRate;
-        this.dial3Rate = this.baseRate;
+        this.gauge1Rate = this.baseRate;
+        this.gauge2Rate = this.baseRate;
+        this.gauge3Rate = this.baseRate;
         
         this.exploding = false;
         
         this.addEventListener(Event.ENTER_FRAME, function () {
-            this.dials.dial1.value += this.dial1Rate;
-            this.dials.dial2.value += this.dial2Rate;
-            this.dials.dial3.value += this.dial3Rate;
+            this.gauges.gauge1.value += this.gauge1Rate;
+            this.gauges.gauge2.value += this.gauge2Rate;
+            this.gauges.gauge3.value += this.gauge3Rate;
             
-            if ((this.dials.dial1.value > this.dials.dial1.maxValue) || (this.dials.dial1.value < this.dials.dial1.minValue)) {
-                this.dials.dial1.lost = true;
-            } else if ((this.dials.dial2.value > this.dials.dial2.maxValue) || (this.dials.dial2.value < this.dials.dial2.minValue)) {
-                this.dials.dial2.lost = true;
-            } else if ((this.dials.dial3.value > this.dials.dial3.maxValue) || (this.dials.dial3.value < this.dials.dial3.minValue)) {
-                this.dials.dial3.lost = true;
+            if ((this.gauges.gauge1.value > this.gauges.gauge1.maxValue) || (this.gauges.gauge1.value < this.gauges.gauge1.minValue)) {
+                this.gauges.gauge1.lost = true;
+            } else if ((this.gauges.gauge2.value > this.gauges.gauge2.maxValue) || (this.gauges.gauge2.value < this.gauges.gauge2.minValue)) {
+                this.gauges.gauge2.lost = true;
+            } else if ((this.gauges.gauge3.value > this.gauges.gauge3.maxValue) || (this.gauges.gauge3.value < this.gauges.gauge3.minValue)) {
+                this.gauges.gauge3.lost = true;
             }
             
-            if ((this.dials.dial1.lost === true) || (this.dials.dial2.lost === true) || (this.dials.dial3.lost === true)) {
+            if ((this.gauges.gauge1.lost === true) || (this.gauges.gauge2.lost === true) || (this.gauges.gauge3.lost === true)) {
                 this.exploding = true;
                 console.info("Kersplode!");
             }
@@ -374,20 +246,23 @@ var Scenes = {
             this.game = game;
             this.gameOverSound = sounds.gameOver;
             
-            var frims   = new Indicator.dial("Frims", images.frims, sounds.danger,
-                                             25, 25, 85, this.machine);
-            var pazzles = new Indicator.dial("Pazzles", images.pazzles, sounds.danger,
-                                             230, 10, 70, this.machine);
-            var gonks   = new Indicator.dial("Gonks", images.gonks, sounds.danger,
-                                             435, 45, 90, this.machine);
+            var frims   = new Gauges.Gauge(images.frims, sounds.danger, 25,
+                                           {name: "Frims", minSafe: 25,
+                                            maxSafe : 85, machine: this.machine});
+            var pazzles = new Gauges.Gauge(images.pazzles, sounds.danger, 230,
+                                           {name: "Pazzles", minSafe: 10,
+                                            maxSafe : 70, machine: this.machine});
+            var gonks   = new Gauges.Gauge(images.gonks, sounds.danger, 435,
+                                           {name: "Gonks", minSafe: 45,
+                                            maxSafe : 90, machine: this.machine});
             var frimurderer   = new sp.panel("Frimurderer", images.panel, sounds.panel,
-                                                  0, {upDial: pazzles, downDial: frims});
+                                                  0, {downGauge: frims, upGauge: pazzles});
             var pazzlepaddler = new sp.panel("Pazzlepaddler", images.panel, sounds.panel,
-                                                    160, {upDial: gonks, downDial: pazzles});
+                                                    160, {downGauge: pazzles, upGauge: gonks});
             var gonkiller     = new sp.panel("Gonkiller", images.panel, sounds.panel,
-                                                320, {upDial: frims, downDial: gonks});
+                                                320, {downGauge: gonks, upGauge: frims});
             var fixitall = new sp.megapanel("Fix-It-All", images.megapanel, sounds.megapanel, 480,
-                                            {downDial: frims, upDial: pazzles, upDial2: gonks});
+                                            {downGauge: frims, upGauge: pazzles, upGauge2: gonks});
             var seconds = new Label();
             var children = [];
             var i;
@@ -399,9 +274,9 @@ var Scenes = {
             this.player.observers.push(fixitall);
             
             this.machine = new Machine(game);
-            this.machine.dials.dial1 = frims;
-            this.machine.dials.dial2 = pazzles;
-            this.machine.dials.dial3 = gonks;
+            this.machine.gauges.gauge1 = frims;
+            this.machine.gauges.gauge2 = pazzles;
+            this.machine.gauges.gauge3 = gonks;
             
             seconds.x = 10;
             seconds.y = 10;
@@ -447,9 +322,9 @@ var Scenes = {
                 if (children[i].safe) {
                     this.addChild(children[i].safe);
                     this.addChild(children[i].danger);
-                    this.addChild(children[i].lowZone);
-                    this.addChild(children[i].safeZone);
                     this.addChild(children[i].highZone);
+                    this.addChild(children[i].safeZone);
+                    this.addChild(children[i].lowZone);
                     this.addChild(children[i].needle);
                     this.addChild(children[i].nameLabel);
                 }
@@ -487,19 +362,19 @@ $(document).ready(function () {
         console.info("Game loaded.");
         var images = {
             frims: {
-                dial: game.assets['img/dial.png'],
+                gauge: game.assets['img/dial.png'],
                 warning: game.assets['img/warning.png'],
                 safe: game.assets['img/safe.png']
             },
             gonks: {
-                dial: game.assets['img/dial.png'],
+                gauge: game.assets['img/dial.png'],
                 warning: game.assets['img/warning.png'],
                 safe: game.assets['img/safe.png']
             },
             megapanel: game.assets['img/panel.png'],
             panel: game.assets['img/panel.png'],
             pazzles: {
-                dial: game.assets['img/dial.png'],
+                gauge: game.assets['img/dial.png'],
                 warning: game.assets['img/warning.png'],
                 safe: game.assets['img/safe.png']
             },

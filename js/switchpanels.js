@@ -6,6 +6,8 @@
 
 //TODO: Check for clock cue clearing.
 //TODO: Create wrapper for clock queuing/unqueueing.
+//TODO: Store selector text on panel.
+//TODO: Check if Selector really needs a this.megapanel.
 
 // This file contains the SwitchPanels namespace.
 // It must be loaded after constants.js and before main.js.
@@ -46,29 +48,34 @@
             this.onTextColor = "black";
             this.offColor = Constants.red;
             this.offTextColor = "white";
+            this.font = "20px arial,sans-serif";
+            
             this.height = 20;
             this.width = 60;
             this.x = this.panel.x + 30;
             this.y = this.panel.y + 110;
-            
-            this.text = "OFF";
-            this.backgroundColor = this.offColor;
-            this.color = this.offTextColor;
-            this.font = "20px arial,sans-serif";
-        },
-        
-        onenterframe: function update() {
-            if (this.panel.isOn === false) {
-                this.backgroundColor = this.offColor;
-                this.text = "OFF";
-                this.color = this.offTextColor;
-            } else {
-                this.backgroundColor = this.onColor;
-                this.text = "ON";
-                this.color = this.onTextColor;
-            }
         }
     });
+    
+    /**
+     * Sets the on/off switch to its off state.
+     *
+     */
+    Switch.prototype.turnOff = function turnSwitchOff() {
+        this.backgroundColor = this.offColor;
+        this.text = "OFF";
+        this.color = this.offTextColor;
+    };
+    
+    /**
+     * Sets the on/off switch to its on state.
+     *
+     */
+    Switch.prototype.turnOn = function turnSwitchOn() {
+        this.backgroundColor = this.onColor;
+        this.text = "ON";
+        this.color = this.onTextColor;
+    };
     
     /**
      * Selector switch for a megapanel.
@@ -79,8 +86,8 @@
      * @param {Panel} [panel] The Panel to which the timer is attached.
      */
     var Selector = Class.create(Label, {
-        initialize: function (megapanel) {
-            Label.call(this, "FRIMS DOWN");
+        initialize: function (megapanel, startText) {
+            Label.call(this, startText);
             console.info("Creating selector.");
             
             this.megapanel = megapanel;
@@ -91,19 +98,17 @@
             this.backgroundColor = Constants.blue;
             this.color = "black";
             this.font = "18px arial,sans-serif";
-        },
-        
-        //TODO: store label text on panel.
-        onenterframe: function update() {
-            if (this.megapanel.selection === 0) {
-                this.text = "FRIMS<br>DECREASING";
-            } else if (this.megapanel.selection === 1) {
-                this.text = "PAZZLES<br>DECREASING";
-            } else if (this.megapanel.selection === 2) {
-                this.text = "GONKS<br>DECREASING";
-            }
         }
     });
+    
+    /**
+     * Changes the text on the selector switch text.
+     *
+     * @param {String} [selectorText] The name of the gauge to decrease.
+     */
+    Selector.prototype.makeSelection = function (selectorText) {
+        this.text = selectorText + "<br>DECREASING";
+    };
 
     /**
      * Class for display and management of switch panel timers.
@@ -116,9 +121,6 @@
      */
     var Timer = Class.create(Label, {
         initialize: function (panel) {
-            // !!! if ((this instanceof Timer) === false) {
-            //    return new Timer();
-            //}
             Label.call(this);
             console.info("Creating timer.");
             
@@ -212,6 +214,12 @@
         }
     };
     
+    /**
+     * Creates a nameplate for a panel.
+     *
+     * @param {String} [name] The name to be displayed.
+     * @param {Panel} [panel] The panel on which to display the name.
+     */
     function panelName(name, panel) {
         var nameLabel = new Label(name);
         nameLabel.width = 120;
@@ -226,20 +234,20 @@
     /**
      * Class for display and management of switch panels.
      *
-     * A switch panel is used to modify the output of two dials -- one
-     * dial goes up, one goes down.
+     * A switch panel is used to modify the output of two gauges -- one
+     * gauge goes up, one goes down.
      * Derived from enchant.Sprite.
      *
      * @param {String} [name] Name of the panel to be displayed.
      * @param {Image} [img] Preloaded image asset to be used for the panel.
      * @param {Sound} [sound] Preloaded sound asset to be used for the on/off switch.
      * @param {Number} [xCoord] x-coordinate where the panel will be placed.
-     * @param {Object} [dials] Object containing references to the dials
+     * @param {Object} [gauges] Object containing references to the gauges
      * to be modified when the panel is turned on.
-     * [dials] must have [downDial] and [upDial] fields.
+     * [gauges] must have [downGauge] and [upGauge] fields.
      */
     SwitchPanels.panel = Class.create(Sprite, {
-        initialize: function (name, img, sound, xCoord, dials) {
+        initialize: function (name, img, sound, xCoord, gauges) {
             Sprite.call(this, img.width, img.height);
             
             this.onOffSound = sound;
@@ -252,27 +260,28 @@
             
             this.isOn = false;
             this.onSwitch = new Switch(this);
+            this.onSwitch.turnOff();
             this.isUsable = true;
             
-            this.upDial = dials.upDial;
-            this.downDial = dials.downDial;
+            this.upGauge = gauges.upGauge;
+            this.downGauge = gauges.downGauge;
             
             this.nameLabel = panelName(name, this);
         },
         
         onenterframe: function panelOEF() {
             if (this.isOn === true) {
-                if ((this.upDial.value + this.upDial.upRate) <= this.upDial.maxValue) {
-                    this.upDial.value += this.upDial.upRate;
+                if ((this.upGauge.value + this.upGauge.upRate) <= this.upGauge.maxValue) {
+                    this.upGauge.value += this.upGauge.upRate;
                 } else {
-                    this.upDial.lost = true;
-                    console.info("Loss due to a dial at maximum value.");
+                    this.upGauge.lost = true;
+                    console.info("Loss due to a gauge at maximum value.");
                 }
-                if ((this.downDial.value - this.downDial.downRate) >= this.downDial.minValue) {
-                    this.downDial.value -= this.downDial.downRate;
+                if ((this.downGauge.value - this.downGauge.downRate) >= this.downGauge.minValue) {
+                    this.downGauge.value -= this.downGauge.downRate;
                 } else {
-                    this.downDial.lost = true;
-                    console.info("Loss due to a dial at minimum value.");
+                    this.downGauge.lost = true;
+                    console.info("Loss due to a gauge at minimum value.");
                 }
             }
             this.clock.decrement();
@@ -303,6 +312,7 @@
      */
     SwitchPanels.panel.prototype.turnOff = function turnPanelOff() {
         this.isOn = false;
+        this.onSwitch.turnOff();
         this.clock.canDecrement = false;
         this.clock.tl.cue({ 20: this.clock.makeIncrementable });
     };
@@ -313,6 +323,7 @@
      */
     SwitchPanels.panel.prototype.turnOn = function turnPanelOn() {
         this.isOn = true;
+        this.onSwitch.turnOn();
         this.clock.canDecrement = true;
         this.clock.canIncrement = false;
     };
@@ -342,7 +353,7 @@
      * Class for display and management of megapanels.
      *
      * Derived from SwitchPanels.panel, this is a switch panel which
-     * makes one dial go up and two go down.
+     * makes one gauge go up and two go down.
      *
      * @param {String} [name] Name of the panel to be displayed.
      * @param {Image} [img] Preloaded image asset to be used for the panel.
@@ -350,63 +361,63 @@
      * sound assets to be used for the on/off switch and selector.
      * [sounds] must have [onOff] and [selector] fields.
      * @param {Number} [xCoord] x-coordinate where the panel will be placed.
-     * @param {Object} [dials] Object containing references to the dials
+     * @param {Object} [gauges] Object containing references to the gauges
      * to be modified when the panel is turned on.
-     * [dials] must have [upDial], [downDial], and [upDial2] fields.
+     * [gauges] must have [upGauge], [downGauge], and [upGauge2] fields.
      */
     SwitchPanels.megapanel = Class.create(SwitchPanels.panel, {
-        initialize: function (name, img, sounds, xCoord, dials) {
-            SwitchPanels.panel.call(this, name, img, sounds.onOff, xCoord, dials);
+        initialize: function (name, img, sounds, xCoord, gauges) {
+            SwitchPanels.panel.call(this, name, img, sounds.onOff, xCoord, gauges);
             
-            this.dial1 = dials.downDial;    //frims
-            this.dial2 = dials.upDial;      //pazzles
-            this.dial3 = dials.upDial2;     //gonks
-            this.upDial2 = this.dial3;
+            this.gauge1 = gauges.downGauge;    //frims
+            this.gauge2 = gauges.upGauge;      //pazzles
+            this.gauge3 = gauges.upGauge2;     //gonks
+            this.upGauge2 = this.gauge3;
             this.modifier = 1.5;
             
             this.selectSound = sounds.selector;
             
             // Three possible selections:
-            //  - 0: dial1 decreasing, dial2 and dial3 increasing.
-            //  - 1: dial2 decreasing, dial1 and dial3 increasing.
-            //  - 2: dial3 decreasing, dial1 and dial2 increasing.
+            //  - 0: gauge1 decreasing, gauge2 and gauge3 increasing.
+            //  - 1: gauge2 decreasing, gauge1 and gauge3 increasing.
+            //  - 2: gauge3 decreasing, gauge1 and gauge2 increasing.
             this.selection = 0;
-            this.selector = new Selector(this);
+            this.selector = new Selector(this, "FRIMS<br>DECREASING");
         },
         
         onenterframe: function megapanelOEF() {
             if (this.isOn === true) {
                 if (this.selection === 0) {
-                    this.downDial = this.dial1;
-                    this.upDial = this.dial2;
-                    this.upDial2 = this.dial3;
+                    this.downGauge = this.gauge1;
+                    this.upGauge = this.gauge2;
+                    this.upGauge2 = this.gauge3;
                 } else if (this.selection === 1) {
-                    this.downDial = this.dial2;
-                    this.upDial = this.dial1;
-                    this.upDial2 = this.dial3;
+                    this.downGauge = this.gauge2;
+                    this.upGauge = this.gauge1;
+                    this.upGauge2 = this.gauge3;
                 } else if (this.selection === 2) {
-                    this.downDial = this.dial3;
-                    this.upDial = this.dial1;
-                    this.upDial2 = this.dial2;
+                    this.downGauge = this.gauge3;
+                    this.upGauge = this.gauge1;
+                    this.upGauge2 = this.gauge2;
                 }
                 
-                if ((this.downDial.value - (this.modifier * this.downDial.downRate)) >= this.downDial.minValue) {
-                    this.downDial.value -= (this.modifier * this.downDial.downRate);
+                if ((this.downGauge.value - (this.modifier * this.downGauge.downRate)) >= this.downGauge.minValue) {
+                    this.downGauge.value -= (this.modifier * this.downGauge.downRate);
                 } else {
-                    this.downDial.lost = true;
-                    console.info("Loss due to a dial at minimum value.");
+                    this.downGauge.lost = true;
+                    console.info("Loss due to a gauge at minimum value.");
                 }
-                if ((this.upDial.value + this.upDial.upRate) <= this.upDial.maxValue) {
-                    this.upDial.value += this.upDial.upRate;
+                if ((this.upGauge.value + this.upGauge.upRate) <= this.upGauge.maxValue) {
+                    this.upGauge.value += this.upGauge.upRate;
                 } else {
-                    this.upDial.lost = true;
-                    console.info("Loss due to a dial at maximum value.");
+                    this.upGauge.lost = true;
+                    console.info("Loss due to a gauge at maximum value.");
                 }
-                if ((this.upDial2.value + this.upDial2.upRate) <= this.upDial2.maxValue) {
-                    this.upDial2.value += this.upDial2.upRate;
+                if ((this.upGauge2.value + this.upGauge2.upRate) <= this.upGauge2.maxValue) {
+                    this.upGauge2.value += this.upGauge2.upRate;
                 } else {
-                    this.upDial2.lost = true;
-                    console.info("Loss due to a dial at maximum value.");
+                    this.upGauge2.lost = true;
+                    console.info("Loss due to a gauge at maximum value.");
                 }
             }
             this.clock.decrement();
@@ -437,10 +448,15 @@
             } else if ((updateData.selector === true) && updateData.player.intersect(this.selector)) {
                 this.tl.clear();
                 this.selectSound.play();
-                if (this.selection === 2) {
+                if (this.selection === 0) {
+                    this.selection = 1;
+                    this.selector.makeSelection("PAZZLES");
+                } else if (this.selection === 1) {
+                    this.selection = 2;
+                    this.selector.makeSelection("GONKS");
+                } else if (this.selection === 2) {
                     this.selection = 0;
-                } else {
-                    this.selection += 1;
+                    this.selector.makeSelection("FRIMS");
                 }
                 this.makeUnusable();
             }
