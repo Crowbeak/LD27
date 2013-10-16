@@ -127,7 +127,7 @@ var Scenes = {
             Scene.call(this);
             
             var kaboom = new Label("KA-BOOM!");
-            var songSays = new Label("The song says so, so it must be true!");
+            var songSays = new Label("You've exploded! The song says so, so it must be true.");
             var pressSpace = new Label("Press spacebar to restart.");
             var warning = new Label("If you press it too soon, a reminder of your failure<br>"
                                     + "will follow you into the next life.");
@@ -246,13 +246,13 @@ var Scenes = {
             this.game = game;
             this.gameOverSound = sounds.gameOver;
             
-            var frims   = new Gauges.Gauge(images.frims, sounds.danger, 25,
+            var frims   = new Gauges.Gauge(images.gauge, sounds.danger, 25,
                                            {name: "Frims", minSafe: 25,
                                             maxSafe : 85, machine: this.machine});
-            var pazzles = new Gauges.Gauge(images.pazzles, sounds.danger, 230,
+            var pazzles = new Gauges.Gauge(images.gauge, sounds.danger, 230,
                                            {name: "Pazzles", minSafe: 10,
                                             maxSafe : 70, machine: this.machine});
-            var gonks   = new Gauges.Gauge(images.gonks, sounds.danger, 435,
+            var gonks   = new Gauges.Gauge(images.gauge, sounds.danger, 435,
                                            {name: "Gonks", minSafe: 45,
                                             maxSafe : 90, machine: this.machine});
             var frimurderer   = new sp.panel("Frimurderer", images.panel, sounds.panel,
@@ -319,9 +319,8 @@ var Scenes = {
                         this.addChild(children[i].selector);
                     }
                 }
-                if (children[i].safe) {
-                    this.addChild(children[i].safe);
-                    this.addChild(children[i].danger);
+                if (children[i].warningLight) {
+                    this.addChild(children[i].warningLight);
                     this.addChild(children[i].highZone);
                     this.addChild(children[i].safeZone);
                     this.addChild(children[i].lowZone);
@@ -361,23 +360,15 @@ $(document).ready(function () {
     game.onload = function () {
         console.info("Game loaded.");
         var images = {
-            frims: {
+            gauge: {
                 gauge: game.assets['img/dial.png'],
-                warning: game.assets['img/warning.png'],
-                safe: game.assets['img/safe.png']
-            },
-            gonks: {
-                gauge: game.assets['img/dial.png'],
-                warning: game.assets['img/warning.png'],
-                safe: game.assets['img/safe.png']
+                warningLights: {
+                    danger: game.assets['img/warning.png'],
+                    safe: game.assets['img/safe.png']
+                }
             },
             megapanel: game.assets['img/panel.png'],
             panel: game.assets['img/panel.png'],
-            pazzles: {
-                gauge: game.assets['img/dial.png'],
-                warning: game.assets['img/warning.png'],
-                safe: game.assets['img/safe.png']
-            },
             player: game.assets['img/player.png']
         };
         var sounds = {

@@ -4,6 +4,8 @@
 // A game in which one must keep the machines from exploding by managing
 // gauge outputs.
 
+//TODO: Add a sound for return to safe zone from danger zone.
+
 // This file contains the Gauge namespace.
 
 /*jslint    browser:true,
@@ -29,48 +31,53 @@
      *
      * Derived from enchant.Sprite().
      *
-     * @param {Image} [img] Preloaded image to be used for Gauge background.
+     * @param {Object} [images] Preloaded images to be used for the
+     * warning light. Has two fields, safe and danger, which refer to
+     * preloaded images.
+     * @param {Gauge} [gauge] The gauge over which this warning light
+     * will exist.
      */
-    Gauges.Warning = {
-        danger: Class.create(Sprite, {
-            initialize: function (img, gauge, sound) {
-                Sprite.call(this, img.width, img.height);
-                
-                this.gauge = gauge;
-                this.image = img;
-                this.x = this.gauge.x + (this.gauge.width / 2) - (this.width / 2);
-                this.y = this.gauge.y - this.height - 16;
-                this.visible = false;
-                this.sound = sound;
-                this.canBuzz = true;
-            },
+    Gauges.WarningLight = Class.create(Sprite, {
+        initialize: function (images, sound, gauge) {
+            Sprite.call(this, images.safe.width, images.safe.height);
             
-            onenterframe: function updateWarning() {
-                if ((this.gauge.value < this.gauge.minSafe) || (this.gauge.value > this.gauge.maxSafe)) {
-                    this.visible = true;
-                    if (this.canBuzz) {
-                        this.sound.play();
-                        this.canBuzz = false;
-                    }
-                } else {
-                    this.visible = false;
-                    if (!this.canBuzz) {
-                        this.canBuzz = true;
-                    }
-                }
-            }
-        }),
-        
-        safe: Class.create(Sprite, {
-            initialize: function (img, gauge) {
-                Sprite.call(this, img.width, img.height);
-                
-                this.gauge = gauge;
-                this.image = img;
-                this.x = this.gauge.x + (this.gauge.width / 2) - (this.width / 2);
-                this.y = this.gauge.y - this.height - 16;
-            }
-        })
+            this.safeImage = images.safe;
+            this.dangerImage = images.danger;
+            this.sound = sound;
+            
+            this.image = this.safeImage;
+            this.x = gauge.x + (gauge.width / 2) - (this.width / 2);
+            this.y = gauge.y - this.height - 16;
+            
+            this.isOn = false;
+        }
+    });
+    
+    /**
+     * Turns the warning light on and plays the warning sound.
+     *
+     * Only takes effect if the warning light is already turned off.
+     *
+     */
+    Gauges.WarningLight.prototype.turnOn = function () {
+        if (this.isOn === false) {
+            this.image = this.dangerImage;
+            this.sound.play();
+            this.isOn = true;
+        }
+    };
+    
+    /**
+     * Turns the warning light off.
+     *
+     * Only takes effect if the warning light is already turned on.
+     *
+     */
+    Gauges.WarningLight.prototype.turnOff = function () {
+        if (this.isOn === true) {
+            this.image = this.safeImage;
+            this.isOn = false;
+        }
     };
     
     /**
@@ -175,17 +182,20 @@
             this.lowZone = makeZone(this, Constants.zoneLow);
             this.needle = makeNeedle(this);
             this.nameLabel = gaugeName(details.name, this);
-            
-            this.danger = new Gauges.Warning.danger(images.warning, this, sound);
-            this.safe = new Gauges.Warning.safe(images.safe, this);
+            this.warningLight = new Gauges.WarningLight(images.warningLights, sound, this);
         },
         
         onenterframe: function () {
-            if ((this.value > this.maxValue) || (this.value < this.minValue)) {
-                this.lost = true;
+            if ((this.value < this.minSafe) || (this.value > this.maxSafe)) {
+                if ((this.value > this.maxValue) || (this.value < this.minValue)) {
+                    this.lost = true;
+                } else {
+                    this.warningLight.turnOn();
+                }
             } else {
-                this.needle.x = this.lowZone.x + (this.value * this.barRatio) - 1;
+                this.warningLight.turnOff();
             }
+            this.needle.x = this.lowZone.x + (this.value * this.barRatio) - 1;
         }
     });
 }(window.Gauges = window.Gauges || {}));
