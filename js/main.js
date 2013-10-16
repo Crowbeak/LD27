@@ -246,18 +246,21 @@ var Scenes = {
             this.game = game;
             this.gameOverSound = sounds.gameOver;
             
-            var frims   = new Gauges.Gauge("Frims", images.frims, sounds.danger,
-                                             25, 25, 85, this.machine);
-            var pazzles = new Gauges.Gauge("Pazzles", images.pazzles, sounds.danger,
-                                             230, 10, 70, this.machine);
-            var gonks   = new Gauges.Gauge("Gonks", images.gonks, sounds.danger,
-                                             435, 45, 90, this.machine);
+            var frims   = new Gauges.Gauge(images.frims, sounds.danger, 25,
+                                           {name: "Frims", minSafe: 25,
+                                            maxSafe : 85, machine: this.machine});
+            var pazzles = new Gauges.Gauge(images.pazzles, sounds.danger, 230,
+                                           {name: "Pazzles", minSafe: 10,
+                                            maxSafe : 70, machine: this.machine});
+            var gonks   = new Gauges.Gauge(images.gonks, sounds.danger, 435,
+                                           {name: "Gonks", minSafe: 45,
+                                            maxSafe : 90, machine: this.machine});
             var frimurderer   = new sp.panel("Frimurderer", images.panel, sounds.panel,
-                                                  0, {upGauge: pazzles, downGauge: frims});
+                                                  0, {downGauge: frims, upGauge: pazzles});
             var pazzlepaddler = new sp.panel("Pazzlepaddler", images.panel, sounds.panel,
-                                                    160, {upGauge: gonks, downGauge: pazzles});
+                                                    160, {downGauge: pazzles, upGauge: gonks});
             var gonkiller     = new sp.panel("Gonkiller", images.panel, sounds.panel,
-                                                320, {upGauge: frims, downGauge: gonks});
+                                                320, {downGauge: gonks, upGauge: frims});
             var fixitall = new sp.megapanel("Fix-It-All", images.megapanel, sounds.megapanel, 480,
                                             {downGauge: frims, upGauge: pazzles, upGauge2: gonks});
             var seconds = new Label();

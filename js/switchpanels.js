@@ -217,6 +217,8 @@
     /**
      * Creates a nameplate for a panel.
      *
+     * @param {String} [name] The name to be displayed.
+     * @param {Panel} [panel] The panel on which to display the name.
      */
     function panelName(name, panel) {
         var nameLabel = new Label(name);

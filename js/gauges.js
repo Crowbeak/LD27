@@ -74,6 +74,41 @@
     };
     
     /**
+     * Creates a nameplate for a gauge.
+     *
+     * @param {String} [name] The name to be displayed.
+     * @param {Panel} [gauge] The panel on which to display the name.
+     */
+    function gaugeName(name, gauge) {
+        var nameLabel = new Label(name);
+        nameLabel.width = 80;
+        nameLabel.height = 20;
+        nameLabel.backgroundColor = Constants.gray;
+        nameLabel.font = "20px arial, sans-serif";
+        nameLabel.color = "white";
+        nameLabel.x = gauge.x + ((gauge.width - nameLabel.width) / 2);
+        nameLabel.y = gauge.y + gauge.height + 10;
+        
+        return nameLabel;
+    }
+    
+    /**
+     * Creates a needle for display on a Gauge.
+     *
+     * @param {Gauge} [gauge] The gauge to which the needle is attached.
+     */
+    function makeNeedle(gauge) {
+        var needle = new Label();
+        needle.height = gauge.height;
+        needle.width = 3;
+        needle.backgroundColor = "black";
+        needle.x = gauge.lowZone.x + (gauge.value * gauge.barRatio) - 1;
+        needle.y = gauge.y;
+        
+        return needle;
+    }
+    
+    /**
      * Creates a zone indicator bar for a Gauge based on minimum and
      * maximum safe values.
      *
@@ -104,23 +139,32 @@
      *
      * Derived from enchant.Sprite().
      *
+     * @param {Object} [images] Contains references to preloaded images
+     * for gauge and warning light.
+     * @param [sound] Reference to a preloaded sound file to be used
+     * as a klaxon when a gauge hits a red zone.
+     * @param {Number} [xCoord] X-coordinate for the gauge.
+     * @param {Object} [details] Has four fields. name is a {String}.
+     * minSafe and maxSafe are {Number} values between 1 and 100.
+     * machine is a {Machine} object.
      */
     Gauges.Gauge = Class.create(Sprite, {
-        initialize: function (name, images, sound, xCoord, minSafe, maxSafe, machine) {
+        initialize: function (images, sound, xCoord, details) {
             Sprite.call(this, images.gauge.width, images.gauge.height);
             
             this.image = images.gauge;
             this.x = xCoord;
             this.y = 220 - this.height - 30;
             this.lost = false;
-            this.machine = machine;
+            this.machine = details.machine;
             
             this.minValue = 0;
             this.maxValue = 100;
-            this.minSafe = minSafe;
-            this.maxSafe = maxSafe;
+            this.minSafe = details.minSafe;
+            this.maxSafe = details.maxSafe;
             this.barRatio = (this.width - 10) / this.maxValue;
             this.value = ((this.maxSafe - this.minSafe) / 2) + this.minSafe;
+            
             this.upBase = Constants.baseRate;
             this.upRate = this.upBase;
             this.downBase = 2 * Constants.baseRate;
@@ -129,37 +173,18 @@
             this.highZone = makeZone(this, Constants.zoneHigh);
             this.safeZone = makeZone(this, Constants.zoneSafe);
             this.lowZone = makeZone(this, Constants.zoneLow);
-            
-            this.needle = new Label();
-            this.needle.height = this.height;
-            this.needle.width = 3;
-            this.needle.backgroundColor = "black";
-            this.needle.x = this.lowZone.x + (this.value * this.barRatio) - 1;
-            this.needle.y = this.y;
-            this.needle.maxX = this.highZone.x + this.highZone.width - 2;
-            this.needle.minX = this.lowZone.x;
+            this.needle = makeNeedle(this);
+            this.nameLabel = gaugeName(details.name, this);
             
             this.danger = new Gauges.Warning.danger(images.warning, this, sound);
             this.safe = new Gauges.Warning.safe(images.safe, this);
-            
-            this.nameLabel = new Label(name);
-            this.nameLabel.width = 80;
-            this.nameLabel.height = 20;
-            this.nameLabel.backgroundColor = Constants.gray;
-            this.nameLabel.font = "20px arial, sans-serif";
-            this.nameLabel.color = "white";
-            this.nameLabel.x = this.x + ((this.width - this.nameLabel.width) / 2);
-            this.nameLabel.y = this.y + this.height + 10;
         },
         
         onenterframe: function () {
             if ((this.value > this.maxValue) || (this.value < this.minValue)) {
                 this.lost = true;
             } else {
-                var testNeedleX = this.lowZone.x + (this.value * this.barRatio) - 1;
-                if ((this.needle.minX < testNeedleX) && (testNeedleX < this.needle.maxX)) {
-                    this.needle.x = testNeedleX;
-                }
+                this.needle.x = this.lowZone.x + (this.value * this.barRatio) - 1;
             }
         }
     });
