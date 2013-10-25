@@ -42,7 +42,7 @@ var Player = Class.create(Sprite, {
         this.maxX = Constants.stageWidth - this.width;
         
         this.observers = [];
-        this.addEventListener(Event.ENTER_FRAME, function () {
+        this.addEventListener(Event.ENTER_FRAME, function playerEventListener() {
             var i;
             var updateData = {
                 onOff: false,
@@ -82,42 +82,32 @@ var Player = Class.create(Sprite, {
 
 
 var Machine = Class.create(Label, {
-    initialize: function (game) {
+    initialize: function () {
         "use strict";
         Label.call(this);
-        this.game = game;
         
         this.visible = false;
         
-        this.gauges = {};
-        
-        this.baseRate = Constants.baseRate;
-        this.gauge1Rate = this.baseRate;
-        this.gauge2Rate = this.baseRate;
-        this.gauge3Rate = this.baseRate;
-        
-        this.exploding = false;
+        this.gauges = [];
+        this.isExploding = false;
         
         this.addEventListener(Event.ENTER_FRAME, function () {
-            this.gauges.gauge1.value += this.gauge1Rate;
-            this.gauges.gauge2.value += this.gauge2Rate;
-            this.gauges.gauge3.value += this.gauge3Rate;
-            
-            if ((this.gauges.gauge1.value > this.gauges.gauge1.maxValue) || (this.gauges.gauge1.value < this.gauges.gauge1.minValue)) {
-                this.gauges.gauge1.lost = true;
-            } else if ((this.gauges.gauge2.value > this.gauges.gauge2.maxValue) || (this.gauges.gauge2.value < this.gauges.gauge2.minValue)) {
-                this.gauges.gauge2.lost = true;
-            } else if ((this.gauges.gauge3.value > this.gauges.gauge3.maxValue) || (this.gauges.gauge3.value < this.gauges.gauge3.minValue)) {
-                this.gauges.gauge3.lost = true;
-            }
-            
-            if ((this.gauges.gauge1.lost === true) || (this.gauges.gauge2.lost === true) || (this.gauges.gauge3.lost === true)) {
-                this.exploding = true;
-                console.info("Kersplode!");
+            var i;
+            for (i = 0; i < this.gauges.length; i++) {
+                this.gauges[i].update();
+                if (this.gauges[i].isLost === true) {
+                    this.isExploding = true;
+                    console.info("KERSPLODE!");
+                }
             }
         });
     }
 });
+
+Machine.prototype.addGauge = function (gauge) {
+    "use strict";
+    this.gauges.push(gauge);
+};
 
 
 var Scenes = {
@@ -255,17 +245,23 @@ var Scenes = {
             var gonks   = new Gauges.Gauge(images.gauge, sounds.danger, 435,
                                            {name: "Gonks", minSafe: 45,
                                             maxSafe : 90, machine: this.machine});
-            var frimurderer   = new sp.panel("Frimurderer", images.panel, sounds.panel,
-                                                  0, {downGauge: frims, upGauge: pazzles});
-            var pazzlepaddler = new sp.panel("Pazzlepaddler", images.panel, sounds.panel,
-                                                    160, {downGauge: pazzles, upGauge: gonks});
-            var gonkiller     = new sp.panel("Gonkiller", images.panel, sounds.panel,
-                                                320, {downGauge: gonks, upGauge: frims});
-            var fixitall = new sp.megapanel("Fix-It-All", images.megapanel, sounds.megapanel, 480,
-                                            {downGauge: frims, upGauge: pazzles, upGauge2: gonks});
+            var frimurderer   = new sp.panel("Frimurderer", images.panel, sounds.panel, 0);
+            var pazzlepaddler = new sp.panel("Pazzlepaddler", images.panel, sounds.panel, 160);
+            var gonkiller     = new sp.panel("Gonkiller", images.panel, sounds.panel, 320);
+            var fixitall = new sp.megapanel("Fix-It-All", images.megapanel, sounds.megapanel, 480);
             var seconds = new Label();
             var children = [];
             var i;
+            
+            frimurderer.addDownGauge(frims);
+            frimurderer.addUpGauge(pazzles);
+            pazzlepaddler.addDownGauge(pazzles);
+            pazzlepaddler.addUpGauge(gonks);
+            gonkiller.addDownGauge(gonks);
+            gonkiller.addUpGauge(frims);
+            fixitall.addDownGauge(frims);
+            fixitall.addUpGauge(pazzles);
+            fixitall.addUpGauge(gonks);
             
             this.player = new Player(images.player, game);
             this.player.observers.push(frimurderer);
@@ -273,10 +269,10 @@ var Scenes = {
             this.player.observers.push(gonkiller);
             this.player.observers.push(fixitall);
             
-            this.machine = new Machine(game);
-            this.machine.gauges.gauge1 = frims;
-            this.machine.gauges.gauge2 = pazzles;
-            this.machine.gauges.gauge3 = gonks;
+            this.machine = new Machine();
+            this.machine.addGauge(frims);
+            this.machine.addGauge(pazzles);
+            this.machine.addGauge(gonks);
             
             seconds.x = 10;
             seconds.y = 10;

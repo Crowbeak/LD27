@@ -242,12 +242,9 @@
      * @param {Image} [img] Preloaded image asset to be used for the panel.
      * @param {Sound} [sound] Preloaded sound asset to be used for the on/off switch.
      * @param {Number} [xCoord] x-coordinate where the panel will be placed.
-     * @param {Object} [gauges] Object containing references to the gauges
-     * to be modified when the panel is turned on.
-     * [gauges] must have [downGauge] and [upGauge] fields.
      */
     SwitchPanels.panel = Class.create(Sprite, {
-        initialize: function (name, img, sound, xCoord, gauges) {
+        initialize: function (name, img, sound, xCoord) {
             Sprite.call(this, img.width, img.height);
             
             this.onOffSound = sound;
@@ -263,31 +260,57 @@
             this.onSwitch.turnOff();
             this.isUsable = true;
             
-            this.upGauge = gauges.upGauge;
-            this.downGauge = gauges.downGauge;
+            this.downGauges = [];
+            this.upGauges = [];
+            this.downPressure = Constants.baseRate * 2;
+            this.upPressure = Constants.baseRate;
             
             this.nameLabel = panelName(name, this);
         },
         
         onenterframe: function panelOEF() {
-            if (this.isOn === true) {
-                if ((this.upGauge.value + this.upGauge.upRate) <= this.upGauge.maxValue) {
-                    this.upGauge.value += this.upGauge.upRate;
-                } else {
-                    this.upGauge.lost = true;
-                    console.info("Loss due to a gauge at maximum value.");
-                }
-                if ((this.downGauge.value - this.downGauge.downRate) >= this.downGauge.minValue) {
-                    this.downGauge.value -= this.downGauge.downRate;
-                } else {
-                    this.downGauge.lost = true;
-                    console.info("Loss due to a gauge at minimum value.");
-                }
-            }
             this.clock.decrement();
             this.clock.increment();
         }
     });
+    
+    /**
+     * Adds a new member to the downGauges list.
+     *
+     */
+    SwitchPanels.panel.prototype.addDownGauge = function (gauge) {
+        this.downGauges.push(gauge);
+        console.info("Adding " + gauge.name + " to downGauges.");
+    };
+    
+    /**
+     * Adds a new member to the upGauges list.
+     *
+     */
+    SwitchPanels.panel.prototype.addUpGauge = function (gauge) {
+        this.upGauges.push(gauge);
+        console.info("Adding " + gauge.name + " to upGauges.");
+    };
+    
+    /**
+     * Removes and returns the first member in the downGauges list.
+     *
+     */
+    SwitchPanels.panel.prototype.removeDownGauge = function () {
+        var gauge = (this.downGauges.splice(0, 1)).pop();
+        console.log("Removing " + gauge.name + " from downGauges.");
+        return gauge;
+    };
+    
+    /**
+     * Removes and returns the first member in the upGauges list.
+     *
+     */
+    SwitchPanels.panel.prototype.removeUpGauge = function () {
+        var gauge = (this.upGauges.splice(0, 1)).pop();
+        console.log("Removing " + gauge.name + " from upGauges.");
+        return gauge;
+    };
     
     /**
      * Sets panel on/off switch to a usable state.
@@ -311,6 +334,15 @@
      *
      */
     SwitchPanels.panel.prototype.turnOff = function turnPanelOff() {
+        var i;
+        
+        for (i = 0; i < this.downGauges.length; i++) {
+            this.downGauges[i].increase(this.downPressure);
+        }
+        for (i = 0; i < this.upGauges.length; i++) {
+            this.upGauges[i].decrease(this.upPressure);
+        }
+        
         this.isOn = false;
         this.onSwitch.turnOff();
         this.clock.canDecrement = false;
@@ -318,10 +350,19 @@
     };
     
     /**
-     * Turns the panel onn.
+     * Turns the panel on.
      *
      */
     SwitchPanels.panel.prototype.turnOn = function turnPanelOn() {
+        var i;
+        
+        for (i = 0; i < this.downGauges.length; i++) {
+            this.downGauges[i].decrease(this.downPressure);
+        }
+        for (i = 0; i < this.upGauges.length; i++) {
+            this.upGauges[i].increase(this.upPressure);
+        }
+        
         this.isOn = true;
         this.onSwitch.turnOn();
         this.clock.canDecrement = true;
@@ -366,62 +407,11 @@
      * [gauges] must have [upGauge], [downGauge], and [upGauge2] fields.
      */
     SwitchPanels.megapanel = Class.create(SwitchPanels.panel, {
-        initialize: function (name, img, sounds, xCoord, gauges) {
-            SwitchPanels.panel.call(this, name, img, sounds.onOff, xCoord, gauges);
-            
-            this.gauge1 = gauges.downGauge;    //frims
-            this.gauge2 = gauges.upGauge;      //pazzles
-            this.gauge3 = gauges.upGauge2;     //gonks
-            this.upGauge2 = this.gauge3;
-            this.modifier = 1.5;
+        initialize: function (name, img, sounds, xCoord) {
+            SwitchPanels.panel.call(this, name, img, sounds.onOff, xCoord);
             
             this.selectSound = sounds.selector;
-            
-            // Three possible selections:
-            //  - 0: gauge1 decreasing, gauge2 and gauge3 increasing.
-            //  - 1: gauge2 decreasing, gauge1 and gauge3 increasing.
-            //  - 2: gauge3 decreasing, gauge1 and gauge2 increasing.
-            this.selection = 0;
-            this.selector = new Selector(this, "FRIMS<br>DECREASING");
-        },
-        
-        onenterframe: function megapanelOEF() {
-            if (this.isOn === true) {
-                if (this.selection === 0) {
-                    this.downGauge = this.gauge1;
-                    this.upGauge = this.gauge2;
-                    this.upGauge2 = this.gauge3;
-                } else if (this.selection === 1) {
-                    this.downGauge = this.gauge2;
-                    this.upGauge = this.gauge1;
-                    this.upGauge2 = this.gauge3;
-                } else if (this.selection === 2) {
-                    this.downGauge = this.gauge3;
-                    this.upGauge = this.gauge1;
-                    this.upGauge2 = this.gauge2;
-                }
-                
-                if ((this.downGauge.value - (this.modifier * this.downGauge.downRate)) >= this.downGauge.minValue) {
-                    this.downGauge.value -= (this.modifier * this.downGauge.downRate);
-                } else {
-                    this.downGauge.lost = true;
-                    console.info("Loss due to a gauge at minimum value.");
-                }
-                if ((this.upGauge.value + this.upGauge.upRate) <= this.upGauge.maxValue) {
-                    this.upGauge.value += this.upGauge.upRate;
-                } else {
-                    this.upGauge.lost = true;
-                    console.info("Loss due to a gauge at maximum value.");
-                }
-                if ((this.upGauge2.value + this.upGauge2.upRate) <= this.upGauge2.maxValue) {
-                    this.upGauge2.value += this.upGauge2.upRate;
-                } else {
-                    this.upGauge2.lost = true;
-                    console.info("Loss due to a gauge at maximum value.");
-                }
-            }
-            this.clock.decrement();
-            this.clock.increment();
+            this.selector = new Selector(this, "Frims<br>DECREASING");
         }
     });
     
@@ -448,16 +438,9 @@
             } else if ((updateData.selector === true) && updateData.player.intersect(this.selector)) {
                 this.tl.clear();
                 this.selectSound.play();
-                if (this.selection === 0) {
-                    this.selection = 1;
-                    this.selector.makeSelection("PAZZLES");
-                } else if (this.selection === 1) {
-                    this.selection = 2;
-                    this.selector.makeSelection("GONKS");
-                } else if (this.selection === 2) {
-                    this.selection = 0;
-                    this.selector.makeSelection("FRIMS");
-                }
+                this.addDownGauge(this.removeUpGauge());
+                this.addUpGauge(this.removeDownGauge());
+                this.selector.makeSelection(this.downGauges[0].name);
                 this.makeUnusable();
             }
         }

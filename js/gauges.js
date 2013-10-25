@@ -5,6 +5,7 @@
 // gauge outputs.
 
 //TODO: Add a sound for return to safe zone from danger zone.
+//TODO: Different base rates built into details object.
 
 // This file contains the Gauge namespace.
 
@@ -37,7 +38,7 @@
      * @param {Gauge} [gauge] The gauge over which this warning light
      * will exist.
      */
-    Gauges.WarningLight = Class.create(Sprite, {
+    var WarningLight = Class.create(Sprite, {
         initialize: function (images, sound, gauge) {
             Sprite.call(this, images.safe.width, images.safe.height);
             
@@ -59,7 +60,7 @@
      * Only takes effect if the warning light is already turned off.
      *
      */
-    Gauges.WarningLight.prototype.turnOn = function () {
+    WarningLight.prototype.on = function () {
         if (this.isOn === false) {
             this.image = this.dangerImage;
             this.sound.play();
@@ -73,7 +74,7 @@
      * Only takes effect if the warning light is already turned on.
      *
      */
-    Gauges.WarningLight.prototype.turnOff = function () {
+    WarningLight.prototype.off = function () {
         if (this.isOn === true) {
             this.image = this.safeImage;
             this.isOn = false;
@@ -162,7 +163,8 @@
             this.image = images.gauge;
             this.x = xCoord;
             this.y = 220 - this.height - 30;
-            this.lost = false;
+            this.name = details.name;
+            this.isLost = false;
             this.machine = details.machine;
             
             this.minValue = 0;
@@ -172,30 +174,78 @@
             this.barRatio = (this.width - 10) / this.maxValue;
             this.value = ((this.maxSafe - this.minSafe) / 2) + this.minSafe;
             
-            this.upBase = Constants.baseRate;
-            this.upRate = this.upBase;
-            this.downBase = 2 * Constants.baseRate;
-            this.downRate = this.downBase;
+            this.changeRate = Constants.baseRate;
             
             this.highZone = makeZone(this, Constants.zoneHigh);
             this.safeZone = makeZone(this, Constants.zoneSafe);
             this.lowZone = makeZone(this, Constants.zoneLow);
             this.needle = makeNeedle(this);
-            this.nameLabel = gaugeName(details.name, this);
-            this.warningLight = new Gauges.WarningLight(images.warningLights, sound, this);
-        },
-        
-        onenterframe: function () {
-            if ((this.value < this.minSafe) || (this.value > this.maxSafe)) {
-                if ((this.value > this.maxValue) || (this.value < this.minValue)) {
-                    this.lost = true;
-                } else {
-                    this.warningLight.turnOn();
-                }
-            } else {
-                this.warningLight.turnOff();
-            }
-            this.needle.x = this.lowZone.x + (this.value * this.barRatio) - 1;
+            this.nameLabel = gaugeName(this.name, this);
+            this.warningLight = new WarningLight(images.warningLights, sound, this);
         }
     });
+    
+    /**
+     *
+     *
+     */
+    Gauges.Gauge.prototype.getChangeRate = function () {
+        return this.changeRate;
+    };
+    
+    /**
+     *
+     *
+     */
+    Gauges.Gauge.prototype.getName = function getGaugeName() {
+        return this.name;
+    };
+    
+    /**
+     *
+     *
+     */
+    Gauges.Gauge.prototype.getValue = function () {
+        return this.value;
+    };
+    
+    /**
+     * Increases gauge pressure.
+     *
+     * @ param {Number} [modifier] The amount by which to increase
+     * pressure per tick in the gauge.
+     */
+    Gauges.Gauge.prototype.increase = function (modifier) {
+        this.changeRate = this.changeRate + modifier;
+    };
+    
+    /**
+     * Decreases gauge pressure.
+     *
+     * @ param {Number} [modifier] The amount by which to decrease
+     * pressure per tick in the gauge.
+     */
+    Gauges.Gauge.prototype.decrease = function (modifier) {
+        this.changeRate = this.changeRate - modifier;
+    };
+    
+    /**
+     * Changes the gauge's value based on its upRate and downRate.
+     *
+     */
+    Gauges.Gauge.prototype.update = function () {
+        this.value = this.value + this.changeRate;
+        
+        if ((this.value < this.minSafe) || (this.value > this.maxSafe)) {
+            if ((this.value > this.maxValue) || (this.value < this.minValue)) {
+                this.isLost = true;
+            } else {
+                this.warningLight.on();
+            }
+        } else {
+            this.warningLight.off();
+        }
+        
+        this.needle.x = this.lowZone.x + (this.value * this.barRatio) - 1;
+    };
 }(window.Gauges = window.Gauges || {}));
