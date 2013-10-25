@@ -66,9 +66,11 @@ var Player = Class.create(Sprite, {
                 if (this.game.input.up) {
                     console.log("Player input up.");
                     updateData.onOff = true;
+                    updateData.selector = false;
                 } else if (this.game.input.down) {
                     console.info("Player input down.");
                     updateData.selector = true;
+                    updateData.onOff = false;
                 }
                 
                 for (i = 0; i < this.observers.length; i++) {

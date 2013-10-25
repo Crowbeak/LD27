@@ -417,15 +417,18 @@
     });
     
     SwitchPanels.megapanel.prototype.changeSelection = function megapanelSelect() {
-        var tempGauge;
+        var tempGauge1, tempGauge2;
         
-        tempGauge = this.removeUpGauge();
-        tempGauge.decrease(this.pressureRange);
-        this.addDownGauge(tempGauge);
+        tempGauge1 = this.removeUpGauge();
+        tempGauge2 = this.removeDownGauge();
         
-        tempGauge = this.removeDownGauge();
-        tempGauge.increase(this.pressureRange);
-        this.addUpGauge(tempGauge);
+        if (this.isOn === true) {
+            tempGauge1.decrease(this.pressureRange);
+            tempGauge2.increase(this.pressureRange);
+        }
+        
+        this.addDownGauge(tempGauge1);
+        this.addUpGauge(tempGauge2);
         
         this.selector.makeSelection(this.downGauges[0]);
     };
