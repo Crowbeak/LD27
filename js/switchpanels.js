@@ -104,10 +104,10 @@
     /**
      * Changes the text on the selector switch text.
      *
-     * @param {String} [selectorText] The name of the gauge to decrease.
+     * @param {Gauge} [gauge] The gauge to decrease.
      */
-    Selector.prototype.makeSelection = function (selectorText) {
-        this.text = selectorText + "<br>DECREASING";
+    Selector.prototype.makeSelection = function (gauge) {
+        this.text = gauge.name + "<br>DECREASING";
     };
 
     /**
@@ -264,6 +264,7 @@
             this.upGauges = [];
             this.downPressure = Constants.baseRate * 2;
             this.upPressure = Constants.baseRate;
+            this.pressureRange = this.downPressure + this.upPressure;
             
             this.nameLabel = panelName(name, this);
         },
@@ -415,6 +416,20 @@
         }
     });
     
+    SwitchPanels.megapanel.prototype.changeSelection = function megapanelSelect() {
+        var tempGauge;
+        
+        tempGauge = this.removeUpGauge();
+        tempGauge.decrease(this.pressureRange);
+        this.addDownGauge(tempGauge);
+        
+        tempGauge = this.removeDownGauge();
+        tempGauge.increase(this.pressureRange);
+        this.addUpGauge(tempGauge);
+        
+        this.selector.makeSelection(this.downGauges[0]);
+    };
+    
     /**
     * Updates the megapanel state.
     * 
@@ -438,9 +453,7 @@
             } else if ((updateData.selector === true) && updateData.player.intersect(this.selector)) {
                 this.tl.clear();
                 this.selectSound.play();
-                this.addDownGauge(this.removeUpGauge());
-                this.addUpGauge(this.removeDownGauge());
-                this.selector.makeSelection(this.downGauges[0].name);
+                this.changeSelection();
                 this.makeUnusable();
             }
         }
