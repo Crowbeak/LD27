@@ -19,9 +19,9 @@
     "use strict";
     
     InputHandlers.checkPlayerX = function () {
-        if (player.x < 0) {
+        if (player.x <= 0) {
             player.x = 0;
-        } else if (player.x > (game.world.width - 60)) {
+        } else if (player.x >= (game.world.width - 60)) {
             player.x = game.world.width - 60;
         }
     };

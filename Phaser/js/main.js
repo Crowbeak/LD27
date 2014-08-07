@@ -28,16 +28,15 @@ var main_state = {
     
     create: function () {
         "use strict";
+        cursors = game.input.keyboard.createCursorKeys();
+        
         player = game.add.sprite(320, game.world.height - 120, 'player_working');
         game.physics.arcade.enable(player);
-        
-        cursors = game.input.keyboard.createCursorKeys();
     },
     
     update: function () {
         "use strict";
         player.body.velocity.x = 0;
-        
         InputHandlers.checkPlayerX();
         InputHandlers.movePlayer();
     }
