@@ -12,10 +12,11 @@
 
 /*global    Phaser,
             Constants,
-            InputHandlers*/
+            InputHandlers,
+            ControlPanels*/
 
 var game = new Phaser.Game(640, 480, Phaser.AUTO, 'game_div');
-var player, cursors, floor;
+var player, cursors, floor, controlPanelGroup;
 
 var main_state = {
     preload: function () {
@@ -36,13 +37,17 @@ var main_state = {
         
         floor = game.add.sprite(0, 0, 'floor');
         game.physics.arcade.enable(floor);
-        floor.y = game.world.height - floor.body.height;
+        floor.y = game.world.height - Constants.floorHeight;
         floor.body.immovable = true;
+        
+        controlPanelGroup = game.add.group();
+        controlPanelGroup.enableBody = true;
+        ControlPanels.createPanels(1, controlPanelGroup);
         
         player = game.add.sprite(0, 0, 'player_working');
         game.physics.arcade.enable(player);
         player.x = Constants.playerStartX;
-        player.y = game.world.height - floor.body.height - player.body.height;
+        player.y = game.world.height - Constants.floorHeight - player.body.height;
         player.body.collideWorldBounds = true;
     },
     

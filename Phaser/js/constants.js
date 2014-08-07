@@ -19,8 +19,10 @@
 // If fps value changes, manual changes must be made wherever you have tl.cue.
 var Constants = {
     blue: "#00CCFF",
+    floorHeight: 50,
     gray: "#666666",
     panelHeight: 236,
+    panelStartX: 120,
     playerSpeed: 200,
     playerStartX: 50,
     red: "#FF0000",
