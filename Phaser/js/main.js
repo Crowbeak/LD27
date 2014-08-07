@@ -10,7 +10,8 @@
             plusplus:true,
             vars:true */
 
-/*global    Phaser */
+/*global    Phaser,
+            InputHandlers*/
 
 var game = new Phaser.Game(640, 480, Phaser.AUTO, 'game_div');
 var player, cursors;
@@ -37,17 +38,8 @@ var main_state = {
         "use strict";
         player.body.velocity.x = 0;
         
-        if (player.x < 0) {
-            player.x = 0;
-        } else if (player.x > (game.world.width - 60)) {
-            player.x = game.world.width - 60;
-        }
-        
-        if (cursors.left.isDown) {
-            player.body.velocity.x = -150;
-        } else if (cursors.right.isDown) {
-            player.body.velocity.x = 150;
-        }
+        InputHandlers.checkPlayerX();
+        InputHandlers.movePlayer();
     }
 };
 
