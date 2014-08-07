@@ -416,6 +416,10 @@
         }
     });
     
+    /**
+     * Changes the megapanel's currently selected down gauge.
+     *
+     */
     SwitchPanels.megapanel.prototype.changeSelection = function megapanelSelect() {
         var tempGauge1, tempGauge2;
         
@@ -436,8 +440,8 @@
     /**
     * Updates the megapanel state.
     * 
-    * If the player pushed up, it will turn the megapanel on or off.
-    * If the player pushed down, it will cycle to the next selection option.
+    * If the player pushes up, it will turn the megapanel on or off.
+    * If the player pushes down, it will cycle to the next selection option.
     *
     * @param {Object} [updateData] An object containing all the info
     * needed to update a panel or megapanel.

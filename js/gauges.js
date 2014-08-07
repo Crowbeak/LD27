@@ -164,7 +164,6 @@
             this.x = xCoord;
             this.y = 220 - this.height - 30;
             this.name = details.name;
-            this.isLost = false;
             this.machine = details.machine;
             
             this.minValue = 0;
@@ -238,7 +237,7 @@
         
         if ((this.value < this.minSafe) || (this.value > this.maxSafe)) {
             if ((this.value > this.maxValue) || (this.value < this.minValue)) {
-                this.isLost = true;
+                this.machine.explode();
             } else {
                 this.warningLight.on();
             }

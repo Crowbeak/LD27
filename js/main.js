@@ -91,24 +91,34 @@ var Machine = Class.create(Label, {
         this.visible = false;
         
         this.gauges = [];
-        this.isExploding = false;
-        
+    
         this.addEventListener(Event.ENTER_FRAME, function () {
             var i;
             for (i = 0; i < this.gauges.length; i++) {
                 this.gauges[i].update();
-                if (this.gauges[i].isLost === true) {
-                    this.isExploding = true;
-                    console.info("KERSPLODE!");
-                }
             }
         });
     }
 });
 
+/**
+ * Adds a gauge to the machine's list of gauges.
+ *
+ */
 Machine.prototype.addGauge = function (gauge) {
     "use strict";
     this.gauges.push(gauge);
+};
+
+/**
+ * Ends the game.
+ *
+ */
+Machine.prototype.explode = function () {
+    "use strict";
+    this.scene.gameOverSound.play();
+    this.scene.game.popScene();
+    console.info("Machine KERSPLODES!");
 };
 
 
@@ -255,6 +265,19 @@ var Scenes = {
             var children = [];
             var i;
             
+            this.machine = new Machine();
+            this.machine.addGauge(frims);
+            this.machine.addGauge(pazzles);
+            this.machine.addGauge(gonks);
+            this.machine.scene = this;
+            
+            frims = new Gauges.Gauge(images.gauge, sounds.danger, 25,
+                                     {name: "Frims", minSafe: 25, maxSafe : 85, machine: this.machine});
+            pazzles = new Gauges.Gauge(images.gauge, sounds.danger, 230,
+                                       {name: "Pazzles", minSafe: 10, maxSafe : 70, machine: this.machine});
+            gonks = new Gauges.Gauge(images.gauge, sounds.danger, 435,
+                                     {name: "Gonks", minSafe: 45, maxSafe : 90, machine: this.machine});
+            
             frimurderer.addDownGauge(frims);
             frimurderer.addUpGauge(pazzles);
             pazzlepaddler.addDownGauge(pazzles);
@@ -270,11 +293,6 @@ var Scenes = {
             this.player.observers.push(pazzlepaddler);
             this.player.observers.push(gonkiller);
             this.player.observers.push(fixitall);
-            
-            this.machine = new Machine();
-            this.machine.addGauge(frims);
-            this.machine.addGauge(pazzles);
-            this.machine.addGauge(gonks);
             
             seconds.x = 10;
             seconds.y = 10;
@@ -329,13 +347,6 @@ var Scenes = {
                     this.addChild(children[i].explosion);
                 }
             }
-            
-            this.addEventListener(Event.ENTER_FRAME, function () {
-                if (this.machine.exploding) {
-                    this.gameOverSound.play();
-                    this.game.popScene(this);
-                }
-            });
         }
     })
 };
