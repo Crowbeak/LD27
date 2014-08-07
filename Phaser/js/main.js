@@ -28,18 +28,26 @@ var main_state = {
     create: function () {
         "use strict";
         player = game.add.sprite(320, game.world.height - 120, 'player_working');
-//        game.physics.arcade.enable(player);
+        game.physics.arcade.enable(player);
         
-//        cursors = game.input.keyboard.createCursorKeys();
+        cursors = game.input.keyboard.createCursorKeys();
     },
     
     update: function () {
         "use strict";
-//        if (cursors.left.isDown) {
-//            player.body.velocity.x = -150;
-//        } else if (cursors.right.isDown) {
-//            player.body.velocity.x = 150;
-//        }
+        player.body.velocity.x = 0;
+        
+        if (player.x < 0) {
+            player.x = 0;
+        } else if (player.x > (game.world.width - 60)) {
+            player.x = game.world.width - 60;
+        }
+        
+        if (cursors.left.isDown) {
+            player.body.velocity.x = -150;
+        } else if (cursors.right.isDown) {
+            player.body.velocity.x = 150;
+        }
     }
 };
 
