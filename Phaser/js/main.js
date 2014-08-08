@@ -13,7 +13,7 @@
 /*global    Phaser,
             Constants,
             InputHandlers,
-            ControlPanels*/
+            ControlPanel*/
 
 var game = new Phaser.Game(640, 480, Phaser.AUTO, 'game_div');
 var player, cursors, floor, controlPanelGroup;
@@ -45,7 +45,7 @@ var main_state = {
         
         controlPanelGroup = game.add.group();
         controlPanelGroup.enableBody = true;
-        ControlPanels.createPanels(1, controlPanelGroup);
+        ControlPanel.createPanels(1, controlPanelGroup);
         
         player = game.add.sprite(0, 0, 'player_working');
         game.physics.arcade.enable(player);
