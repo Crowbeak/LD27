@@ -11,13 +11,16 @@
             vars:true */
 
 /*global    Phaser,
-            Constants,
             game*/
+
 
 (function (PowerSwitch) {
     "use strict";
+    var relativeX = 30;
+    var relativeY = 90;
     
-    PowerSwitch.createSwitch = function (x, y, spriteGroup) {
-        return spriteGroup.create(x, y, 'switch_off');
+    PowerSwitch.createSwitch = function (panelX, panelY, spriteGroup) {
+        var powerSwitch = spriteGroup.create(panelX + relativeX, panelY + relativeY, 'switch_off');
+        return powerSwitch;
     };
 }(window.PowerSwitch = window.PowerSwitch || {}));

@@ -11,22 +11,20 @@
             vars:true */
 
 /*global    Phaser,
-            Constants,
             game,
             PowerSwitch*/
 
+        
 (function (ControlPanel) {
     "use strict";
+    ControlPanel.height = 236;
+    ControlPanel.width = 156;
+    ControlPanel.startX = 120;
+    ControlPanel.spacingY = 5;
     
-    ControlPanel.createPanels = function (number, spriteGroup) {
-        var i, panel;
-        for (i = 0; i < number; i++) {
-            panel = spriteGroup.create(0, 0, 'control_panel');
-            panel.y = game.world.height - Constants.floorHeight - panel.body.height;
-            panel.x = Constants.panelStartX + (i * (panel.body.width + 5));
-            
-            panel.powerSwitch = PowerSwitch.createSwitch(panel.x + 30, panel.y + 90, spriteGroup);
-            game.physics.arcade.enable(panel.powerSwitch);
-        }
+    ControlPanel.createPanel = function (panelX, panelY, spriteGroup) {
+        var panel = spriteGroup.create(panelX, panelY, 'control_panel');
+        panel.powerSwitch = PowerSwitch.createSwitch(panelX, panelY, spriteGroup);
+        return panel;
     };
 }(window.ControlPanel = window.ControlPanel || {}));

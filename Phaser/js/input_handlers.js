@@ -11,7 +11,7 @@
             vars:true */
 
 /*global    Phaser,
-            Constants,
+            GlobalConstants,
             player,
             game,
             cursors*/
@@ -21,9 +21,9 @@
     
     InputHandlers.movePlayer = function () {
         if (cursors.left.isDown) {
-            player.body.velocity.x = -(Constants.playerSpeed);
+            player.body.velocity.x = -(GlobalConstants.player.speed);
         } else if (cursors.right.isDown) {
-            player.body.velocity.x = Constants.playerSpeed;
+            player.body.velocity.x = GlobalConstants.player.speed;
         }
     };
 }(window.InputHandlers = window.InputHandlers || {}));

@@ -5,9 +5,6 @@
 // gauge outputs.
 
 
-// constants.js must be the first file loaded.
-// It starts enchant.js up in addition to specifying the Constants object.
-
 /*jslint    browser:true,
             devel:true,
             plusplus:true,
@@ -17,15 +14,19 @@
 
 
 // If fps value changes, manual changes must be made wherever you have tl.cue.
-var Constants = {
-    blue: "#00CCFF",
+var GlobalConstants = {
+    colors: {
+        blue: "#00CCFF",
+        gray: "#666666",
+        red: "#FF0000",
+    },
+    
+    player: {
+        speed: 200,
+        startX: 50
+    },
+    
     floorHeight: 50,
-    gray: "#666666",
-    panelHeight: 236,
-    panelStartX: 120,
-    playerSpeed: 200,
-    playerStartX: 50,
-    red: "#FF0000",
     seconds: 10,
     stageHeight: 480,
     stageWidth: 640,
@@ -33,4 +34,4 @@ var Constants = {
     zoneLow: "low",
     zoneSafe: "safe"
 };
-if (Object.freeze) { Object.freeze(Constants); }
+if (Object.freeze) { Object.freeze(GlobalConstants); }

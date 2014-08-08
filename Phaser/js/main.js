@@ -11,9 +11,10 @@
             vars:true */
 
 /*global    Phaser,
-            Constants,
+            GlobalConstants,
             InputHandlers,
             ControlPanel*/
+
 
 var game = new Phaser.Game(640, 480, Phaser.AUTO, 'game_div');
 var player, cursors, floor, controlPanelGroup;
@@ -40,17 +41,17 @@ var main_state = {
         
         floor = game.add.sprite(0, 0, 'floor');
         game.physics.arcade.enable(floor);
-        floor.y = game.world.height - Constants.floorHeight;
+        floor.y = game.world.height - GlobalConstants.floorHeight;
         floor.body.immovable = true;
         
         controlPanelGroup = game.add.group();
         controlPanelGroup.enableBody = true;
-        ControlPanel.createPanels(1, controlPanelGroup);
+        this.createPanels(1, controlPanelGroup);
         
         player = game.add.sprite(0, 0, 'player_working');
         game.physics.arcade.enable(player);
-        player.x = Constants.playerStartX;
-        player.y = game.world.height - Constants.floorHeight - player.body.height;
+        player.x = GlobalConstants.player.startX;
+        player.y = game.world.height - GlobalConstants.floorHeight - player.body.height;
         player.body.collideWorldBounds = true;
     },
     
@@ -58,6 +59,16 @@ var main_state = {
         "use strict";
         player.body.velocity.x = 0;
         InputHandlers.movePlayer();
+    },
+    
+    createPanels: function (number, spriteGroup) {
+        "use strict";
+        var i, panel, panelX;
+        var panelY = game.world.height - GlobalConstants.floorHeight - ControlPanel.height;
+        for (i = 0; i < number; i++) {
+            panelX = ControlPanel.startX + (i * (ControlPanel.width + ControlPanel.spacingY));
+            panel = ControlPanel.createPanel(panelX, panelY, spriteGroup);
+        }
     }
 };
 
