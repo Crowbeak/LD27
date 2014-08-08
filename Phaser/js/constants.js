@@ -13,12 +13,11 @@
 /*global    game */
 
 
-// If fps value changes, manual changes must be made wherever you have tl.cue.
 var GlobalConstants = {
     colors: {
         blue: "#00CCFF",
         gray: "#666666",
-        red: "#FF0000",
+        red: "#FF0000"
     },
     
     player: {

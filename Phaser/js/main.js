@@ -61,15 +61,18 @@ var mainState = {
     },
     
     initializeControlPanelGroup: function () {
+        "use strict";
         controlPanelGroup = game.add.group();
         controlPanelGroup.enableBody = true;
     },
     
     initializeCursors: function () {
+        "use strict";
         cursors = game.input.keyboard.createCursorKeys();
     },
     
     initializeFloor: function () {
+        "use strict";
         floor = game.add.sprite(0, 0, 'floor');
         game.physics.arcade.enable(floor);
         floor.y = game.world.height - GlobalConstants.floorHeight;
@@ -77,6 +80,7 @@ var mainState = {
     },
     
     initializePlayer: function () {
+        "use strict";
         player = game.add.sprite(0, 0, 'player_working');
         game.physics.arcade.enable(player);
         player.x = GlobalConstants.player.startX;

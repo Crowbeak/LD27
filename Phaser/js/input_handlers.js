@@ -16,6 +16,7 @@
             game,
             cursors*/
 
+
 (function (InputHandlers) {
     "use strict";
     

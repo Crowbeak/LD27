@@ -20,7 +20,6 @@
     var relativeY = 90;
     
     PowerSwitch.createSwitch = function (panelX, panelY, spriteGroup) {
-        var powerSwitch = spriteGroup.create(panelX + relativeX, panelY + relativeY, 'switch_off');
-        return powerSwitch;
+        return spriteGroup.create(panelX + relativeX, panelY + relativeY, 'switch_off');
     };
 }(window.PowerSwitch = window.PowerSwitch || {}));
