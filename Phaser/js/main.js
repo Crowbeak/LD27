@@ -24,7 +24,10 @@ var main_state = {
         game.stage.backgroundColor = '#dddddd';
         
         game.load.image('floor', 'img/floor.png');
+        
         game.load.image('control_panel', 'img/panel.png');
+        game.load.image('switch_on', 'img/switch_on.png');
+        game.load.image('switch_off', 'img/switch_off.png');
         
         game.load.image('player_working', 'img/player_using_machine.png');
         game.load.image('player_left', 'img/player_left.png');
