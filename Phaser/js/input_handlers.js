@@ -12,9 +12,11 @@
 
 /*global    Phaser,
             GlobalConstants,
+            ControlPanel,
             player,
             game,
-            cursors*/
+            cursors,
+            controlPanelGroup*/
 
 
 (function (InputHandlers) {
@@ -22,9 +24,18 @@
     
     InputHandlers.movePlayer = function () {
         if (cursors.left.isDown) {
+            player.frame = 0;
             player.body.velocity.x = -(GlobalConstants.player.speed);
         } else if (cursors.right.isDown) {
+            player.frame = 1;
             player.body.velocity.x = GlobalConstants.player.speed;
+        }
+    };
+    
+    InputHandlers.toggleSwitches = function () {
+        if (cursors.up.isDown) {
+            player.frame = 2;
+            controlPanelGroup.forEach(ControlPanel.toggleSwitch, this);
         }
     };
 }(window.InputHandlers = window.InputHandlers || {}));

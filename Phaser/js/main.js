@@ -27,12 +27,11 @@ var mainState = {
         game.load.image('floor', 'img/floor.png');
         
         game.load.image('control_panel', 'img/panel.png');
+        game.load.spritesheet('power_switch', 'img/power_switch.png', 20, 40);
         game.load.image('switch_on', 'img/switch_on.png');
         game.load.image('switch_off', 'img/switch_off.png');
         
-        game.load.image('player_working', 'img/player_using_machine.png');
-        game.load.image('player_left', 'img/player_left.png');
-        game.load.image('player_right', 'img/player_right.png');
+        game.load.spritesheet('player', 'img/player.png', 60, 120);
     },
     
     create: function () {
@@ -48,6 +47,7 @@ var mainState = {
         "use strict";
         player.body.velocity.x = 0;
         InputHandlers.movePlayer();
+//        InputHandlers.toggleSwitches();
     },
     
     createPanels: function (number, spriteGroup) {
@@ -81,7 +81,7 @@ var mainState = {
     
     initializePlayer: function () {
         "use strict";
-        player = game.add.sprite(0, 0, 'player_working');
+        player = game.add.sprite(0, 0, 'player', 2);
         game.physics.arcade.enable(player);
         player.x = GlobalConstants.player.startX;
         player.y = game.world.height - GlobalConstants.floorHeight - player.body.height;

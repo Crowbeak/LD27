@@ -4,6 +4,9 @@
 // A game in which one must keep the machines from exploding by managing
 // gauge outputs.
 
+// A ControlPanel object has the following members:
+//  powerSwitch (PowerSwitch)
+
 
 /*jslint    browser:true,
             devel:true,
@@ -12,6 +15,7 @@
 
 /*global    Phaser,
             game,
+            player,
             PowerSwitch*/
 
         
@@ -23,8 +27,13 @@
     ControlPanel.spacingY = 5;
     
     ControlPanel.createPanel = function (panelX, panelY, spriteGroup) {
-        var panel = spriteGroup.create(panelX, panelY, 'control_panel');
-        panel.powerSwitch = PowerSwitch.createSwitch(panelX, panelY, spriteGroup);
-        return panel;
+        var newPanel = spriteGroup.create(panelX, panelY, 'control_panel');
+        newPanel.powerSwitch = PowerSwitch.createSwitch(panelX, panelY, spriteGroup);
+        return newPanel;
+    };
+    
+    ControlPanel.toggleSwitch = function (controlPanel) {
+        game.physics.arcade.overlap(player, controlPanel.powerSwitch,
+                                    PowerSwitch.toggleSwitch(controlPanel.powerSwitch), null, this);
     };
 }(window.ControlPanel = window.ControlPanel || {}));
